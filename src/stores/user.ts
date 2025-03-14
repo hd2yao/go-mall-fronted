@@ -1,12 +1,11 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import Cookies from 'js-cookie'
 import { userApi } from '@/api'
-import type { UserInfo, Address } from '@/types'
+import type { UserInfo, Address, TokenInfo } from '@/types'
 
 export const useUserStore = defineStore('user', () => {
-  const token = ref<string>(Cookies.get('go_mall_token') || '')
-  const refreshToken = ref<string>(Cookies.get('go_mall_refresh_token') || '')
+  const token = ref<string>(localStorage.getItem('go_mall_token') || '')
+  const refreshToken = ref<string>(localStorage.getItem('go_mall_refresh_token') || '')
   const userInfo = ref<UserInfo | null>(null)
   const addressList = ref<Address[]>([])
 
@@ -16,26 +15,29 @@ export const useUserStore = defineStore('user', () => {
   function setToken(accessToken: string, refreshTokenValue: string) {
     token.value = accessToken
     refreshToken.value = refreshTokenValue
-    Cookies.set('go_mall_token', accessToken, { expires: 7 })
-    Cookies.set('go_mall_refresh_token', refreshTokenValue, { expires: 30 })
+    localStorage.setItem('go_mall_token', accessToken)
+    localStorage.setItem('go_mall_refresh_token', refreshTokenValue)
   }
 
   // 清除token
   function clearToken() {
     token.value = ''
     refreshToken.value = ''
-    Cookies.remove('go_mall_token')
-    Cookies.remove('go_mall_refresh_token')
+    localStorage.removeItem('go_mall_token')
+    localStorage.removeItem('go_mall_refresh_token')
   }
 
   // 登录
   async function login(loginName: string, password: string) {
     try {
       const res = await userApi.login({ login_name: loginName, password })
+      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
       setToken(res.data.access_token, res.data.refresh_token)
+
       await getUserInfo()
       return res
     } catch (error) {
+      console.error('登录失败:', error)
       throw error
     }
   }
@@ -57,8 +59,9 @@ export const useUserStore = defineStore('user', () => {
   async function getUserInfo() {
     try {
       const res = await userApi.getUserInfo()
-      userInfo.value = res.data
-      return res.data
+      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
+      userInfo.value = res
+      return res
     } catch (error) {
       throw error
     }
@@ -68,8 +71,9 @@ export const useUserStore = defineStore('user', () => {
   async function getAddressList() {
     try {
       const res = await userApi.getAddressList()
-      addressList.value = res.data
-      return res.data
+      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
+      addressList.value = res
+      return res
     } catch (error) {
       throw error
     }
@@ -81,8 +85,9 @@ export const useUserStore = defineStore('user', () => {
 
     try {
       const res = await userApi.refreshToken(refreshToken.value)
-      setToken(res.data.access_token, res.data.refresh_token)
-      return res.data
+      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
+      setToken(res.access_token, res.refresh_token)
+      return res
     } catch (error) {
       clearToken()
       throw error

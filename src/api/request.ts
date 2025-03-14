@@ -25,6 +25,8 @@ service.interceptors.request.use(
       const token = localStorage.getItem('go_mall_token')
       if (token) {
         config.headers['go-mall-token'] = token
+      } else {
+        console.log('没有找到 token')
       }
     }
     return config
