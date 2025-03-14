@@ -66,23 +66,23 @@ export interface UserUpdateParams {
 // 地址相关类型
 export interface Address {
   id: string
-  name: string
-  phone: string
-  province: string
-  city: string
-  district: string
-  detail: string
-  is_default: boolean
+  user_name: string
+  user_phone: string
+  province_name: string
+  city_name: string
+  region_name: string
+  detail_address: string
+  default: number
 }
 
 export interface AddressParams {
-  name: string
-  phone: string
-  province: string
-  city: string
-  district: string
-  detail: string
-  is_default?: boolean
+  user_name: string
+  user_phone: string
+  province_name: string
+  city_name: string
+  region_name: string
+  detail_address: string
+  default: number
 }
 
 // 商品相关类型

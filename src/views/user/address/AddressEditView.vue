@@ -11,25 +11,25 @@ const isEdit = ref(false)
 
 const addressForm = reactive({
   id: '',
-  name: '',
-  phone: '',
-  province: '',
-  city: '',
-  district: '',
-  detail: '',
-  is_default: false,
+  user_name: '',
+  user_phone: '',
+  province_name: '',
+  city_name: '',
+  region_name: '',
+  detail_address: '',
+  default: 0,
 })
 
 const rules = {
-  name: [{ required: true, message: '请输入收货人姓名', trigger: 'blur' }],
-  phone: [
+  user_name: [{ required: true, message: '请输入收货人姓名', trigger: 'blur' }],
+  user_phone: [
     { required: true, message: '请输入手机号码', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' },
   ],
-  province: [{ required: true, message: '请选择省份', trigger: 'change' }],
-  city: [{ required: true, message: '请选择城市', trigger: 'change' }],
-  district: [{ required: true, message: '请选择区/县', trigger: 'change' }],
-  detail: [{ required: true, message: '请输入详细地址', trigger: 'blur' }],
+  province_name: [{ required: true, message: '请选择省份', trigger: 'change' }],
+  city_name: [{ required: true, message: '请选择城市', trigger: 'change' }],
+  region_name: [{ required: true, message: '请选择区/县', trigger: 'change' }],
+  detail_address: [{ required: true, message: '请输入详细地址', trigger: 'blur' }],
 }
 
 // 省市区数据
@@ -87,8 +87,8 @@ const fetchAddressDetail = async (id: string) => {
     Object.assign(addressForm, res.data)
 
     // 设置选中的省市
-    selectedProvince.value = addressForm.province
-    selectedCity.value = addressForm.city
+    selectedProvince.value = addressForm.province_name
+    selectedCity.value = addressForm.city_name
   } catch (error) {
     console.error('获取地址详情失败:', error)
     ElMessage.error('获取地址详情失败')
@@ -98,13 +98,13 @@ const fetchAddressDetail = async (id: string) => {
 }
 
 const handleProvinceChange = () => {
-  addressForm.city = ''
-  addressForm.district = ''
+  addressForm.city_name = ''
+  addressForm.region_name = ''
   selectedCity.value = ''
 }
 
 const handleCityChange = () => {
-  addressForm.district = ''
+  addressForm.region_name = ''
 }
 
 const handleSubmit = async () => {
@@ -141,19 +141,19 @@ const handleCancel = () => {
       </template>
 
       <el-form :model="addressForm" :rules="rules" label-width="100px">
-        <el-form-item label="收货人" prop="name">
-          <el-input v-model="addressForm.name" placeholder="请输入收货人姓名"></el-input>
+        <el-form-item label="收货人" prop="user_name">
+          <el-input v-model="addressForm.user_name" placeholder="请输入收货人姓名"></el-input>
         </el-form-item>
 
-        <el-form-item label="手机号码" prop="phone">
-          <el-input v-model="addressForm.phone" placeholder="请输入手机号码"></el-input>
+        <el-form-item label="手机号码" prop="user_phone">
+          <el-input v-model="addressForm.user_phone" placeholder="请输入手机号码"></el-input>
         </el-form-item>
 
         <el-form-item label="所在地区" required>
           <div class="region-select">
             <el-form-item prop="province" class="region-item">
               <el-select
-                v-model="addressForm.province"
+                v-model="addressForm.province_name"
                 placeholder="请选择省份"
                 @change="handleProvinceChange"
               >
@@ -166,15 +166,15 @@ const handleCancel = () => {
               </el-select>
             </el-form-item>
 
-            <el-form-item prop="city" class="region-item">
+            <el-form-item prop="city_name" class="region-item">
               <el-select
-                v-model="addressForm.city"
+                v-model="addressForm.city_name"
                 placeholder="请选择城市"
-                :disabled="!addressForm.province"
+                :disabled="!addressForm.province_name"
                 @change="handleCityChange"
               >
                 <el-option
-                  v-for="city in cities[addressForm.province] || []"
+                  v-for="city in cities[addressForm.province_name] || []"
                   :key="city"
                   :label="city"
                   :value="city"
@@ -184,12 +184,12 @@ const handleCancel = () => {
 
             <el-form-item prop="district" class="region-item">
               <el-select
-                v-model="addressForm.district"
+                v-model="addressForm.region_name"
                 placeholder="请选择区/县"
-                :disabled="!addressForm.city"
+                :disabled="!addressForm.city_name"
               >
                 <el-option
-                  v-for="district in districts[addressForm.city] || []"
+                  v-for="district in districts[addressForm.city_name] || []"
                   :key="district"
                   :label="district"
                   :value="district"
@@ -199,9 +199,9 @@ const handleCancel = () => {
           </div>
         </el-form-item>
 
-        <el-form-item label="详细地址" prop="detail">
+        <el-form-item label="详细地址" prop="detail_address">
           <el-input
-            v-model="addressForm.detail"
+            v-model="addressForm.detail_address"
             type="textarea"
             :rows="3"
             placeholder="请输入详细地址，如街道、门牌号等"
@@ -209,7 +209,7 @@ const handleCancel = () => {
         </el-form-item>
 
         <el-form-item>
-          <el-checkbox v-model="addressForm.is_default">设为默认收货地址</el-checkbox>
+          <el-checkbox v-model="addressForm.default">设为默认收货地址</el-checkbox>
         </el-form-item>
 
         <el-form-item>
