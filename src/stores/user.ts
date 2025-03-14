@@ -31,9 +31,13 @@ export const useUserStore = defineStore('user', () => {
   async function login(loginName: string, password: string) {
     try {
       const res = await userApi.login({ login_name: loginName, password })
-      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
-      setToken(res.data.access_token, res.data.refresh_token)
+      console.log('登录响应:', res)
 
+      // 使用类型断言访问 TokenInfo 属性
+      const tokenInfo = res.data as unknown as TokenInfo
+      setToken(tokenInfo.access_token, tokenInfo.refresh_token)
+
+      console.log('localStorage 中的 token:', localStorage.getItem('go_mall_token'))
       await getUserInfo()
       return res
     } catch (error) {
@@ -59,8 +63,7 @@ export const useUserStore = defineStore('user', () => {
   async function getUserInfo() {
     try {
       const res = await userApi.getUserInfo()
-      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
-      userInfo.value = res
+      userInfo.value = res.data as unknown as UserInfo
       return res
     } catch (error) {
       throw error
@@ -71,8 +74,7 @@ export const useUserStore = defineStore('user', () => {
   async function getAddressList() {
     try {
       const res = await userApi.getAddressList()
-      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
-      addressList.value = res
+      addressList.value = res.data as unknown as Address[]
       return res
     } catch (error) {
       throw error
@@ -85,8 +87,8 @@ export const useUserStore = defineStore('user', () => {
 
     try {
       const res = await userApi.refreshToken(refreshToken.value)
-      // @ts-expect-error - 响应拦截器已经处理了 ApiResponse 结构
-      setToken(res.access_token, res.refresh_token)
+      const tokenInfo = res.data as unknown as TokenInfo
+      setToken(tokenInfo.access_token, tokenInfo.refresh_token)
       return res
     } catch (error) {
       clearToken()

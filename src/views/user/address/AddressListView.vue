@@ -27,7 +27,7 @@ const fetchAddresses = async () => {
   loading.value = true
   try {
     const res = await userApi.getAddressList()
-    addresses.value = res.data
+    addresses.value = res.data as unknown as Address[]
   } catch (error) {
     console.error('获取地址列表失败:', error)
     ElMessage.error('获取地址列表失败')
