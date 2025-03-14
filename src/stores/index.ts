@@ -1,6 +1,7 @@
-import { useUserStore } from './user'
-import { useCartStore } from './cart'
-import { useOrderStore } from './order'
-import { useCommodityStore } from './commodity'
+import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
-export { useUserStore, useCartStore, useOrderStore, useCommodityStore }
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
+
+export default pinia

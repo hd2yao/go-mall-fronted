@@ -1,79 +1,71 @@
-import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import viteCompression from 'vite-plugin-compression'
 
-// 创建通用的代理配置
-const createProxyOptions = (target: string) => ({
-  target,
-  changeOrigin: true,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  configure: (proxy: any, options: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    proxy.on('proxyRes', (proxyRes: any, req: any, res: any) => {
-      // 添加 CORS 头部
-      const origin = req.headers.origin || 'http://localhost:5174'
-      proxyRes.headers['Access-Control-Allow-Origin'] = origin
-      proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
-      proxyRes.headers['Access-Control-Allow-Headers'] =
-        'Origin, X-Requested-With, Content-Type, Accept, platform, go-mall-token'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
-      // 处理 OPTIONS 请求
-      if (req.method === 'OPTIONS') {
-        res.statusCode = 200
-      }
-    })
-  },
-})
-
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue(), vueDevTools()],
+  plugins: [
+    vue(),
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+      imports: ['vue', 'vue-router', 'pinia'],
+      dts: 'src/types/auto-imports.d.ts',
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+      dts: 'src/types/components.d.ts',
+    }),
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: 'gzip',
+      ext: '.gz',
+    }),
+  ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@': resolve(__dirname, 'src'),
     },
   },
   server: {
+    port: 3000,
+    open: true,
+    cors: true,
     proxy: {
-      '/commodity': createProxyOptions('http://localhost:8080'),
-      '/user/address': {
+      '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        configure: (proxy: any, options: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          proxy.on('proxyReq', (proxyReq: any, req: any, res: any) => {
-            // 添加平台标识
-            proxyReq.setHeader('platform', 'H5')
-
-            // 添加 token（如果有）
-            const token = localStorage.getItem('go_mall_token')
-            if (token) {
-              proxyReq.setHeader('go-mall-token', token)
-            }
-          })
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          proxy.on('proxyRes', (proxyRes: any, req: any, res: any) => {
-            // 添加 CORS 头部
-            proxyRes.headers['Access-Control-Allow-Origin'] = '*'
-            proxyRes.headers['Access-Control-Allow-Methods'] =
-              'GET, POST, PUT, DELETE, PATCH, OPTIONS'
-            proxyRes.headers['Access-Control-Allow-Headers'] =
-              'Origin, X-Requested-With, Content-Type, Accept, platform, go-mall-token'
-
-            // 处理 OPTIONS 请求
-            if (req.method === 'OPTIONS') {
-              res.statusCode = 200
-            }
-          })
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js',
+        assetFileNames: '[ext]/[name]-[hash].[ext]',
+        manualChunks: {
+          vue: ['vue', 'vue-router', 'pinia'],
+          elementPlus: ['element-plus'],
         },
       },
-      '/user': createProxyOptions('http://localhost:8080'),
-      '/cart': createProxyOptions('http://localhost:8080'),
-      '/order': createProxyOptions('http://localhost:8080'),
-      // 根据需要添加其他 API 路径
     },
   },
 })
