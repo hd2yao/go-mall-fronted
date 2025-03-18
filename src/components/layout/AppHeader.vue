@@ -13,10 +13,10 @@
           </el-menu>
         </div>
         <div class="user-actions">
-          <template v-if="true">
+          <template v-if="userStore.isLoggedIn">
             <el-dropdown>
               <span class="user-info">
-                <!-- {{ userStore.userInfo?.nickname || userStore.userInfo?.username }} -->
+                {{ userStore.userInfo?.nickname }}
                 <el-icon><arrow-down /></el-icon>
               </span>
               <template #dropdown>
@@ -31,14 +31,14 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-button type="primary">
+            <el-button type="primary" @click="router.push('/cart')">
               <el-icon><shopping-cart /></el-icon>
               购物车
             </el-button>
           </template>
           <template v-else>
-            <el-button >登录</el-button>
-            <el-button type="primary">注册</el-button>
+            <el-button @click="router.push('/login')">登录</el-button>
+            <el-button type="primary" @click="router.push('/register')">注册</el-button>
           </template>
         </div>
       </div>
@@ -48,8 +48,16 @@
 
 <script setup lang="ts">
 import { ArrowDown, ShoppingCart } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+
+const router = useRouter()
+const userStore = useUserStore()
 
 const handleLogout = () => {
+  userStore.handleLogout()
+  ElMessage.success('已退出登录')
 }
 </script>
 
@@ -78,10 +86,18 @@ const handleLogout = () => {
       margin: 0 20px;
     }
 
-    .action-buttons {
+    .user-actions {
       display: flex;
       align-items: center;
       gap: 12px;
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        color: #333;
+      }
     }
   }
 }
