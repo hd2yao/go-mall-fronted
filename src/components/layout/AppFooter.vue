@@ -18,9 +18,13 @@ const currentYear = computed(() => new Date().getFullYear())
 
 <style scoped lang="scss">
 .app-footer {
-  margin-top: 40px;
-  padding: 20px 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   background-color: #f5f5f5;
+  padding: 20px 0;
 
   .footer-content {
     text-align: center;

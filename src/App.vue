@@ -12,7 +12,9 @@ onMounted(async () => {
 <template>
   <div class="app-container">
     <AppHeader />
-    <router-view />
+    <main class="main-content">
+      <router-view />
+    </main>
     <AppFooter />
   </div>
 </template>
@@ -22,6 +24,13 @@ onMounted(async () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  margin-top: 60px; /* header的高度 */
+  margin-bottom: 60px; /* footer的高度 */
+  min-height: calc(100vh - 120px); /* 减去header和footer的高度 */
 }
 
 #app {

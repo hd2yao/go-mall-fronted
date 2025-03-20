@@ -1,7 +1,5 @@
 <template>
   <div class="home-page">
-    <AppHeader />
-
     <div class="home-container">
       <el-row class="container-main">
         <el-col :span="24">
@@ -12,8 +10,6 @@
         </el-col>
       </el-row>
     </div>
-
-    <AppFooter />
   </div>
 </template>
 
