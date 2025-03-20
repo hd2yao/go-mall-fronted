@@ -1,5 +1,8 @@
 <template>
   <div class="commodity-detail">
+    <div class="back-button">
+        <el-button @click="goBack">返回</el-button>
+    </div>
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="commodity" class="detail-container">
@@ -32,11 +35,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { getCommodityDetail } from '@/api/commodity';
 import type { CommodityDetail } from '@/api/commodity';
+
 const route = useRoute();
+const router = useRouter();
 
 const commodity = ref<CommodityDetail | null>(null);
 const loading = ref(true);
@@ -73,6 +78,10 @@ const buyNow = () => {
   ElMessage.info('立即购买功能开发中...');
 };
 
+const goBack = () => {
+  router.back();
+};
+
 onMounted(() => {
   fetchCommodityDetail();
 });
@@ -83,6 +92,20 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  position: relative;
+}
+
+.back-button {
+  margin-bottom: 20px;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 9999;
+}
+
+.back-button .el-button {
+  background: #fff;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
 }
 
 .loading, .error {
@@ -185,5 +208,21 @@ onMounted(() => {
 .detail-content h2 {
   font-size: 20px;
   margin-bottom: 20px;
+}
+
+.custom-back-btn {
+  padding: 8px 16px;
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  color: #606266;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.custom-back-btn:hover {
+  color: #409eff;
+  border-color: #c6e2ff;
+  background-color: #ecf5ff;
 }
 </style>

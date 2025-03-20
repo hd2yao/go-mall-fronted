@@ -41,24 +41,31 @@ import { useRouter } from 'vue-router';
 import { getCommodityListByCategory } from '@/api/commodity';
 import type { Commodity } from '@/api/commodity';
 import type { PaginationParams } from '@/types/api'
+import { useCommodityStore } from '@/stores/commodity';
 
 const router = useRouter();
 const props = defineProps<{
   categoryId: number;
+  initialPage?: number;
 }>();
 
 const commodities = ref<Commodity[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const pagination = ref<PaginationParams | null | undefined>(null);
+const commodityStore = useCommodityStore();
 
-const fetchCommodities = async (page: number = 1) => {
+const fetchCommodities = async (page: number = props.initialPage || 1) => {
   loading.value = true;
   error.value = null;
   try {
+    console.log('开始获取商品列表, categoryId:', props.categoryId, 'page:', page);
     const response = await getCommodityListByCategory(props.categoryId, page);
+    console.log('获取到的商品数据:', response);
     commodities.value = response.data.data;
     pagination.value = response.data.Pagination;
+    // 保存当前页码到 store
+    commodityStore.setCurrentPage(page);
   } catch (err) {
     error.value = '获取商品列表失败';
     console.error('获取商品列表失败:', err);

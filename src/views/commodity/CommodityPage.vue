@@ -5,22 +5,22 @@
         <CategoryList @category-click="handleCategoryClick" />
       </div>
       <div class="content-area">
-        <CommodityList :category-id="selectedCategoryId" />
+        <CommodityList :category-id="commodityStore.selectedCategoryId" :initial-page="commodityStore.currentPage" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import CategoryList from '@/components/CategoryList.vue';
 import CommodityList from '@/components/CommodityList.vue';
 import type { Category } from '@/api/commodity';
+import { useCommodityStore } from '@/stores/commodity';
 
-const selectedCategoryId = ref<number>(0);
+const commodityStore = useCommodityStore();
 
 const handleCategoryClick = (category: Category) => {
-  selectedCategoryId.value = category.id;
+  commodityStore.setSelectedCategory(category.id);
 };
 </script>
 

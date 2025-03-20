@@ -2,19 +2,18 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getAccessToken, clearToken } from '@/utils/token'
-import CommodityPage from '@/views/commodity/CommodityPage.vue'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: CommodityPage,
+    component: () => import('@/views/commodity/CommodityPage.vue'),
     meta: { title: '首页' }
   },
   {
     path: '/commodity/:id',
     name: 'CommodityDetail',
-    component: () => import('@/views/CommodityDetail.vue'),
+    component: () => import('@/views/commodity/detail.vue'),
     meta: { title: '商品详情' }
   },
   {
