@@ -59,9 +59,9 @@ const fetchCommodities = async (page: number = props.initialPage || 1) => {
   loading.value = true;
   error.value = null;
   try {
-    console.log('开始获取商品列表, categoryId:', props.categoryId, 'page:', page);
+    // console.log('开始获取商品列表, categoryId:', props.categoryId, 'page:', page);
     const response = await getCommodityListByCategory(props.categoryId, page);
-    console.log('获取到的商品数据:', response);
+    // console.log('获取到的商品数据:', response);
     commodities.value = response.data.data;
     pagination.value = response.data.Pagination;
     // 保存当前页码到 store

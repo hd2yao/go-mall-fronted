@@ -10,8 +10,8 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./../components/layout/AppFooter.vue')['default']
     AppHeader: typeof import('./../components/layout/AppHeader.vue')['default']
-    CategoryList: typeof import('../components/business/commodity/CategoryList.vue')['default']
-    CommodityList: typeof import('../components/business/commodity/CommodityList.vue')['default']
+    CategoryList: typeof import('./../components/business/commodity/CategoryList.vue')['default']
+    CommodityList: typeof import('./../components/business/commodity/CommodityList.vue')['default']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
