@@ -7,8 +7,7 @@
           <div class="profile-header">
             <el-avatar
               :size="100"
-              :src="userStore.userInfo.avatar?.replace('@', '')"
-              style="object-fit: cover; width: 100px; height: 100px;"
+              :src="userStore.userInfo.avatar"
             />
             <div class="user-basic-info">
               <h3>{{ userStore.userInfo.nickname }}</h3>
@@ -48,6 +47,9 @@
             <el-button type="primary" @click="handleEdit">编辑资料</el-button>
             <el-button type="warning" @click="handleVerify" v-if="!userStore.userInfo.verified">
               实名认证
+            </el-button>
+            <el-button type="info" @click="$router.push('/user/address')">
+              收货地址管理
             </el-button>
           </div>
         </template>
@@ -132,9 +134,6 @@ const rules: FormRules = {
 // 编辑资料
 const handleEdit = () => {
   if (!userStore.userInfo) return
-
-  console.log(userStore.userInfo.avatar)
-  console.log(userStore.userInfo.avatar?.replace('@', ''))
 
   form.value = {
     nickname: userStore.userInfo.nickname,

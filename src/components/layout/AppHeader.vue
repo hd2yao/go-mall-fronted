@@ -25,6 +25,9 @@
                     <router-link to="/user/profile">个人中心</router-link>
                   </el-dropdown-item>
                   <el-dropdown-item>
+                    <router-link to="/user/address">收货地址管理</router-link>
+                  </el-dropdown-item>
+                  <el-dropdown-item>
                     <router-link to="/order/list">我的订单</router-link>
                   </el-dropdown-item>
                   <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>

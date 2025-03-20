@@ -53,6 +53,32 @@ export interface LoginResponse {
   srv_create_time: string
 }
 
+// 收货地址相关接口
+export interface Address {
+  id: number
+  user_name: string
+  user_phone: string
+  masked_user_name: string
+  masked_user_phone: string
+  default: number
+  province_name: string
+  city_name: string
+  region_name: string
+  detail_address: string
+  created_at: string
+}
+
+// 新增收货地址参数
+export interface AddAddressParams {
+  user_name: string
+  user_phone: string
+  default: number
+  province_name: string
+  city_name: string
+  region_name: string
+  detail_address: string
+}
+
 // 用户注册
 export const register = (data: RegisterParams) => {
   return request<ApiResponse<string>>({
@@ -130,5 +156,39 @@ export const updateUserInfo = (data: UpdateUserInfoParams) => {
     method: 'patch',
     data,
     needToken: true
+  })
+}
+
+// 获取收货地址列表
+export const getAddressList = () => {
+  return request<ApiResponse<Address[]>>({
+    url: '/user/address/',
+    method: 'get'
+  })
+}
+
+// 新增收货地址
+export const addAddress = (data: AddAddressParams) => {
+  return request<ApiResponse<null>>({
+    url: '/user/address',
+    method: 'post',
+    data
+  })
+}
+
+// 更新收货地址
+export const updateAddress = (address_id: number, data: AddAddressParams) => {
+  return request<ApiResponse<null>>({
+    url: `/user/address/${address_id}`,
+    method: 'patch',
+    data
+  })
+}
+
+// 删除收货地址
+export const deleteAddress = (address_id: number) => {
+  return request<ApiResponse<null>>({
+    url: `/user/address/${address_id}`,
+    method: 'delete'
   })
 }

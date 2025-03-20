@@ -35,6 +35,14 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true
     }
   },
+  {
+    path: '/user/address',
+    name: 'Address',
+    component: () => import('@/views/user/Address.vue'),
+    meta: {
+      requiresAuth: true
+    }
+  },
   // {
   //   path: '/category',
   //   component: () => import('@/views/product/Category.vue'),
