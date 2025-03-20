@@ -40,6 +40,12 @@ export interface UserInfo {
   created_at: string
 }
 
+export interface UpdateUserInfoParams {
+  nickname?: string
+  slogan?: string
+  avatar?: string
+}
+
 export interface LoginResponse {
   access_token: string
   refresh_token: string
@@ -113,6 +119,16 @@ export const getUserInfo = () => {
   return request<ApiResponse<UserInfo>>({
     url: '/user/info',
     method: 'get',
+    needToken: true
+  })
+}
+
+// 更新用户信息
+export const updateUserInfo = (data: UpdateUserInfoParams) => {
+  return request<ApiResponse<string>>({
+    url: '/user/info',
+    method: 'patch',
+    data,
     needToken: true
   })
 }

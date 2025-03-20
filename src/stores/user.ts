@@ -5,6 +5,7 @@ import { login, register, getUserInfo, logout } from '@/api/user'
 import { saveLoginResponse, clearToken, getAccessToken } from '@/utils/token'
 
 export const useUserStore = defineStore('user', () => {
+  const token = ref(getAccessToken())
   const userInfo = ref<UserInfo | null>(null)
   const loading = ref(false)
 
@@ -93,21 +94,31 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 初始化时检查登录状态
+  // 初始化用户状态
   const initUserState = async () => {
-    if (getAccessToken()) {
-      await getUserInfoAction()
+    const accessToken = getAccessToken()
+    if (accessToken) {
+      try {
+        await getUserInfoAction()
+      } catch (error) {
+        console.error('初始化用户状态失败:', error)
+        // 如果获取用户信息失败，清除token
+        clearToken()
+        token.value = null
+        userInfo.value = null
+      }
     }
   }
 
   return {
+    token,
     userInfo,
     loading,
     isLoggedIn,
+    initUserState,
     handleLogin,
     handleRegister,
     handleLogout,
-    getUserInfoAction,
-    initUserState
+    getUserInfoAction
   }
 })

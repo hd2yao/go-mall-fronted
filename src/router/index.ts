@@ -1,20 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { getAccessToken, clearToken } from '@/utils/token'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    name: 'Home',
     component: () => import('@/views/home/index.vue'),
     meta: { title: '首页' }
   },
   {
     path: '/login',
+    name: 'Login',
     component: () => import('@/views/user/Login.vue'),
     meta: { title: '登录' }
   },
   {
     path: '/register',
+    name: 'Register',
     component: () => import('@/views/user/Register.vue'),
     meta: { title: '注册' }
   },
@@ -22,6 +26,14 @@ const routes: RouteRecordRaw[] = [
     path: '/reset-password',
     component: () => import('@/views/user/ResetPassword.vue'),
     meta: { title: '重置密码' }
+  },
+  {
+    path: '/user/profile',
+    name: 'Profile',
+    component: () => import('@/views/user/Profile.vue'),
+    meta: {
+      requiresAuth: true
+    }
   },
   // {
   //   path: '/category',
@@ -88,14 +100,30 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
-  // 设置页面标题
-  document.title = `${to.meta.title ? to.meta.title + ' - ' : ''}Go Mall商城`
-
-  // 登录验证
+router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
-  if (to.meta.requiresAuth && !userStore.token) {
-    next({ path: '/login', query: { redirect: to.fullPath } })
+
+  // 如果路由需要认证
+  if (to.meta.requiresAuth) {
+    // 检查是否有token
+    if (!getAccessToken()) {
+      next({ name: 'Login', query: { redirect: to.fullPath } })
+      return
+    }
+
+    // 如果有token但没有用户信息，尝试获取用户信息
+    if (!userStore.userInfo) {
+      try {
+        await userStore.getUserInfoAction()
+        next()
+      } catch (error) {
+        // 如果获取用户信息失败，清除token并跳转到登录页
+        clearToken()
+        next({ name: 'Login', query: { redirect: to.fullPath } })
+      }
+    } else {
+      next()
+    }
   } else {
     next()
   }

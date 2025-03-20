@@ -10,10 +10,26 @@ onMounted(async () => {
 </script>
 
 <template>
-  <router-view />
+  <div class="app-container">
+    <AppHeader />
+    <router-view />
+    <AppFooter />
+  </div>
 </template>
 
-<style scoped>
+<style>
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
