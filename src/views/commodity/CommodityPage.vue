@@ -12,8 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import CategoryList from '@/components/CategoryList.vue';
-import CommodityList from '@/components/CommodityList.vue';
+import CategoryList from '@/components/business/commodity/CategoryList.vue';
+import CommodityList from '@/components/business/commodity/CommodityList.vue';
 import type { Category } from '@/api/commodity';
 import { useCommodityStore } from '@/stores/commodity';
 
