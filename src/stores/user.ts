@@ -148,4 +148,9 @@ export const useUserStore = defineStore('user', () => {
     getUserInfoAction,
     refreshUserToken
   }
+}, {
+  persist: {
+    key: 'user-store',
+    storage: localStorage
+  }
 })
