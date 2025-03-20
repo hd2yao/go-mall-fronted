@@ -1,13 +1,32 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { UserInfo } from '@/api/user'
-import { login, register, getUserInfo, logout } from '@/api/user'
-import { saveLoginResponse, clearToken, getAccessToken } from '@/utils/token'
+import { login, register, getUserInfo, logout, refreshToken } from '@/api/user'
+import { saveLoginResponse, clearToken, getAccessToken, getRefreshToken } from '@/utils/token'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getAccessToken())
   const userInfo = ref<UserInfo | null>(null)
   const loading = ref(false)
+
+  // 刷新token
+  const refreshUserToken = async () => {
+    const refresh_token = getRefreshToken()
+    if (!refresh_token) return false
+
+    try {
+      const res = await refreshToken(refresh_token)
+      if (res.data.code === 0) {
+        // 保存新的token信息
+        saveLoginResponse(res.data.data)
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('刷新token失败:', error)
+      return false
+    }
+  }
 
   // 判断用户是否已登录
   const isLoggedIn = computed(() => {
@@ -102,10 +121,17 @@ export const useUserStore = defineStore('user', () => {
         await getUserInfoAction()
       } catch (error) {
         console.error('初始化用户状态失败:', error)
-        // 如果获取用户信息失败，清除token
-        clearToken()
-        token.value = null
-        userInfo.value = null
+        // 如果获取用户信息失败，尝试刷新token
+        const refreshed = await refreshUserToken()
+        if (refreshed) {
+          // 刷新成功，重新获取用户信息
+          await getUserInfoAction()
+        } else {
+          // 刷新失败，清除token
+          clearToken()
+          token.value = null
+          userInfo.value = null
+        }
       }
     }
   }
@@ -119,6 +145,7 @@ export const useUserStore = defineStore('user', () => {
     handleLogin,
     handleRegister,
     handleLogout,
-    getUserInfoAction
+    getUserInfoAction,
+    refreshUserToken
   }
 })

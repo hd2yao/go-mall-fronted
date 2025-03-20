@@ -117,9 +117,17 @@ router.beforeEach(async (to, from, next) => {
         await userStore.getUserInfoAction()
         next()
       } catch (error) {
-        // 如果获取用户信息失败，清除token并跳转到登录页
-        clearToken()
-        next({ name: 'Login', query: { redirect: to.fullPath } })
+        // 如果获取用户信息失败，尝试刷新token
+        const refreshed = await userStore.refreshUserToken()
+        if (refreshed) {
+          // 刷新成功，重新获取用户信息
+          await userStore.getUserInfoAction()
+          next()
+        } else {
+          // 刷新失败，清除token并跳转到登录页
+          clearToken()
+          next({ name: 'Login', query: { redirect: to.fullPath } })
+        }
       }
     } else {
       next()
