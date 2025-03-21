@@ -64,11 +64,12 @@ const routes: RouteRecordRaw[] = [
   //   component: () => import('@/views/product/Detail.vue'),
   //   meta: { title: '商品详情' }
   // },
-  // {
-  //   path: '/search',
-  //   component: () => import('@/views/product/Search.vue'),
-  //   meta: { title: '搜索结果' }
-  // },
+  {
+    path: '/search',
+    name: 'Search',
+    component: () => import('@/views/commodity/SearchResult.vue'),
+    meta: { title: '搜索结果' }
+  },
   // {
   //   path: '/cart',
   //   component: () => import('@/views/cart/index.vue'),

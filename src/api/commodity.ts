@@ -38,6 +38,34 @@ export interface CommodityDetail extends Commodity {
   stock_num: number;
 }
 
+export interface SearchParams {
+  keyword: string
+  page: number
+  page_size?: number
+}
+
+export interface SearchResult {
+  id: number
+  name: string
+  intro: string
+  category_id: number
+  cover_img: string
+  original_price: number
+  selling_price: number
+  tag: string
+  sell_status: number
+  created_at: string
+}
+
+export interface SearchResponse extends ApiResponse<SearchResult[]> {
+  data: SearchResult[]
+  Pagination: {
+    page: number
+    page_size: number
+    total_rows: number
+  }
+}
+
 export const getCategoryHierarchy = () => {
   return request<ApiResponse<Category[]>>({
     url: '/commodity/category-hierarchy/',
@@ -63,3 +91,11 @@ export const getCommodityDetail = (commodityId: number) => {
     method: 'GET'
   });
 };
+
+export const searchCommodities = (params: SearchParams) => {
+  return request<SearchResponse>({
+    url: '/commodity/search',
+    method: 'GET',
+    params
+  })
+}

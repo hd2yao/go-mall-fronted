@@ -12,6 +12,9 @@
             <el-menu-item index="/product/list">全部商品</el-menu-item>
           </el-menu>
         </div>
+        <div class="search-section">
+          <SearchBar />
+        </div>
         <div class="user-actions">
           <template v-if="userStore.isLoggedIn">
             <el-dropdown>
@@ -54,6 +57,7 @@ import { ArrowDown, ShoppingCart } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import SearchBar from '@/components/layout/SearchBar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -93,6 +97,12 @@ const handleLogout = () => {
     .nav-menu {
       flex: 1;
       margin: 0 20px;
+    }
+
+    .search-section {
+      margin: 0 20px;
+      flex: 1;
+      max-width: 400px;
     }
 
     .user-actions {
