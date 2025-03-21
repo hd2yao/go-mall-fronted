@@ -2,10 +2,7 @@
   <header class="app-header">
     <div class="container-main">
       <div class="header-content">
-        <div class="logo">
-          <router-link to="/">Go Mall商城</router-link>
-        </div>
-        <div class="nav-menu">
+        <div class="left-section">
           <el-menu mode="horizontal" :ellipsis="false" router>
             <el-menu-item index="/">首页</el-menu-item>
             <el-menu-item index="/category">商品分类</el-menu-item>
@@ -84,25 +81,30 @@ const handleLogout = () => {
     justify-content: space-between;
     height: 60px;
 
-    .logo {
-      font-size: 1.5rem;
-      font-weight: bold;
+    .left-section {
+      display: flex;
+      align-items: center;
+      width: auto;
 
-      a {
-        color: var(--el-color-primary);
-        text-decoration: none;
+      :deep(.el-menu) {
+        border-bottom: none;
+      }
+
+      :deep(.el-menu-item) {
+        font-size: 16px;
+        height: 60px;
+        line-height: 60px;
+      }
+
+      :deep(.el-menu-item.is-active) {
+        color: #1890ff;
+        border-bottom: 2px solid #1890ff;
       }
     }
 
-    .nav-menu {
-      flex: 1;
-      margin: 0 20px;
-    }
-
     .search-section {
-      margin: 0 20px;
       flex: 1;
-      max-width: 400px;
+      margin: 0 40px;
     }
 
     .user-actions {

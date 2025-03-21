@@ -8,7 +8,7 @@
       @keyup.enter="handleSearch"
     >
       <template #append>
-        <el-button @click="handleSearch">
+        <el-button @click="handleSearch" type="primary">
           <el-icon><Search /></el-icon>
         </el-button>
       </template>
@@ -39,10 +39,22 @@ const handleSearch = () => {
 <style scoped>
 .search-bar {
   width: 100%;
-  max-width: 400px;
+  display: flex;
+  justify-content: center;
 }
 
 .search-input {
   width: 100%;
+  max-width: 550px;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 4px;
+}
+
+:deep(.el-input-group__append) {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: white;
 }
 </style>

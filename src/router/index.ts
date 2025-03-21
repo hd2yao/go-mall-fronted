@@ -7,8 +7,14 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/commodity/CommodityPage.vue'),
+    component: () => import('@/views/home/Home.vue'),
     meta: { title: '首页' }
+  },
+  {
+    path: '/product/list',
+    name: 'ProductList',
+    component: () => import('@/views/commodity/CommodityPage.vue'),
+    meta: { title: '全部商品' }
   },
   {
     path: '/commodity/:id',

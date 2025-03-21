@@ -5,6 +5,7 @@
         <CategoryList @category-click="handleCategoryClick" />
       </div>
       <div class="content-area">
+        <h2 class="page-title">全部商品</h2>
         <CommodityList :category-id="commodityStore.selectedCategoryId" :initial-page="commodityStore.currentPage" />
       </div>
     </div>
@@ -28,6 +29,7 @@ const handleCategoryClick = (category: Category) => {
 .commodity-page {
   min-height: 100vh;
   background-color: #f5f5f5;
+  margin-top: 60px;
 }
 
 .page-container {
@@ -50,5 +52,15 @@ const handleCategoryClick = (category: Category) => {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.page-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
 }
 </style>
