@@ -90,12 +90,15 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loading.value = true
 
-    await userStore.handleLogin(loginForm.username, loginForm.password)
-    ElMessage.success('登录成功')
-
-    // 跳转到之前的页面或首页
-    const redirect = route.query.redirect as string
-    router.push(redirect || '/')
+    const success = await userStore.handleLogin(loginForm.username, loginForm.password)
+    if (success) {
+      ElMessage.success('登录成功')
+      // 跳转到之前的页面或首页
+      const redirect = route.query.redirect as string
+      router.push(redirect || '/')
+    } else {
+      ElMessage.error('登录失败，请检查用户名和密码')
+    }
   } catch (error) {
     console.error('登录失败:', error)
     ElMessage.error('登录失败，请检查用户名和密码')

@@ -30,7 +30,7 @@ export const useUserStore = defineStore('user', () => {
 
   // 判断用户是否已登录
   const isLoggedIn = computed(() => {
-    return !!getAccessToken() && !!userInfo.value
+    return !!token.value && !!userInfo.value
   })
 
   const setUserInfo = (info: UserInfo) => {
@@ -39,6 +39,7 @@ export const useUserStore = defineStore('user', () => {
 
   const clearUserInfo = () => {
     userInfo.value = null
+    token.value = null
   }
 
   const getUserInfoAction = async () => {
@@ -61,9 +62,10 @@ export const useUserStore = defineStore('user', () => {
       if (res.data.code === 0) {
         // 保存token信息
         saveLoginResponse(res.data.data)
-        // 获取用户信息
-        await getUserInfoAction()
-        return true
+        token.value = res.data.data.access_token
+        // 获取并保存用户信息
+        const userInfoRes = await getUserInfoAction()
+        return !!userInfoRes
       }
       return false
     } catch (error) {
@@ -100,9 +102,8 @@ export const useUserStore = defineStore('user', () => {
     try {
       const res = await logout()
       if (res.data.code === 0) {
-        // 清除本地token
+        // 清除本地token和用户信息
         clearToken()
-        // 清除用户信息
         clearUserInfo()
         return true
       }
@@ -116,7 +117,8 @@ export const useUserStore = defineStore('user', () => {
   // 初始化用户状态
   const initUserState = async () => {
     const accessToken = getAccessToken()
-    if (accessToken) {
+    if (accessToken && !userInfo.value) {
+      token.value = accessToken
       try {
         await getUserInfoAction()
       } catch (error) {
@@ -127,10 +129,9 @@ export const useUserStore = defineStore('user', () => {
           // 刷新成功，重新获取用户信息
           await getUserInfoAction()
         } else {
-          // 刷新失败，清除token
+          // 刷新失败，清除token和用户信息
           clearToken()
-          token.value = null
-          userInfo.value = null
+          clearUserInfo()
         }
       }
     }
@@ -149,8 +150,5 @@ export const useUserStore = defineStore('user', () => {
     refreshUserToken
   }
 }, {
-  persist: {
-    key: 'user-store',
-    storage: localStorage
-  }
+  persist: true
 })

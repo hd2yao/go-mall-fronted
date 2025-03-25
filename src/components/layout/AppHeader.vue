@@ -13,10 +13,10 @@
           <SearchBar />
         </div>
         <div class="user-actions">
-          <template v-if="userStore.isLoggedIn">
+          <template v-if="isLoggedIn">
             <el-dropdown>
               <span class="user-info">
-                {{ userStore.userInfo?.nickname }}
+                {{ userInfo?.nickname }}
                 <el-icon><arrow-down /></el-icon>
               </span>
               <template #dropdown>
@@ -54,14 +54,21 @@ import { ArrowDown, ShoppingCart } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { computed } from 'vue'
 import SearchBar from '@/components/layout/SearchBar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const handleLogout = () => {
-  userStore.handleLogout()
-  ElMessage.success('已退出登录')
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const userInfo = computed(() => userStore.userInfo)
+
+const handleLogout = async () => {
+  const success = await userStore.handleLogout()
+  if (success) {
+    ElMessage.success('已退出登录')
+    router.push('/')
+  }
 }
 </script>
 
