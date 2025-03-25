@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
@@ -7,6 +7,46 @@ import { formatPrice } from '@/utils/format'
 
 const cartStore = useCartStore()
 const router = useRouter()
+const selectedItems = ref<Set<number>>(new Set())
+
+// 计算选中商品的总价
+const selectedTotal = computed(() => {
+  return cartStore.cartItems
+    .filter(item => selectedItems.value.has(item.cart_item_id))
+    .reduce((total, item) => total + item.commodity_selling_price * item.commodity_num, 0)
+})
+
+// 计算选中商品的数量
+const selectedCount = computed(() => {
+  return selectedItems.value.size
+})
+
+// 全选状态
+const isAllSelected = computed(() => {
+  return cartStore.cartItems.length > 0 && selectedItems.value.size === cartStore.cartItems.length
+})
+
+// 切换全选状态
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedItems.value.clear()
+  } else {
+    cartStore.cartItems.forEach(item => {
+      selectedItems.value.add(item.cart_item_id)
+    })
+  }
+  selectedItems.value = new Set(selectedItems.value)
+}
+
+// 切换单个商品选中状态
+const toggleItem = (itemId: number) => {
+  if (selectedItems.value.has(itemId)) {
+    selectedItems.value.delete(itemId)
+  } else {
+    selectedItems.value.add(itemId)
+  }
+  selectedItems.value = new Set(selectedItems.value)
+}
 
 // 在组件挂载时获取购物车列表
 onMounted(() => {
@@ -45,63 +85,108 @@ const formatImageUrl = (url: string) => {
 
 <template>
   <div class="cart-container">
-    <div class="cart-header">
-      <h2>我的购物车</h2>
-    </div>
-
-    <div v-if="cartStore.cartItems.length === 0" class="empty-cart">
-      <el-empty description="购物车是空的" />
-    </div>
-
-    <template v-else>
-      <div class="cart-list">
-        <div class="cart-header-row">
-          <div class="col-image">商品图片</div>
-          <div class="col-info">商品信息</div>
-          <div class="col-quantity">数量</div>
-          <div class="col-total">小计</div>
-          <div class="col-actions">操作</div>
-        </div>
-        <div v-for="item in cartStore.cartItems" :key="item.cart_item_id" class="cart-item">
-          <div class="col-image" @click="goToDetail(item.commodity_id)">
-            <img :src="formatImageUrl(item.commodity_img)" :alt="item.commodity_name">
-          </div>
-          <div class="col-info">
-            <h3 class="commodity-name" @click="goToDetail(item.commodity_id)">
-              {{ item.commodity_name }}
-            </h3>
-            <p class="price">¥{{ formatPrice(item.commodity_selling_price) }}</p>
-          </div>
-          <div class="col-quantity">
-            <el-input-number
-              v-model="item.commodity_num"
-              :min="1"
-              :max="5"
-              @change="(val) => handleUpdateQuantity(item.cart_item_id, val ?? 0)"
-            />
-          </div>
-          <div class="col-total">
-            <p>¥{{ formatPrice(item.commodity_selling_price * item.commodity_num) }}</p>
-          </div>
-          <div class="col-actions">
-            <el-button type="danger" @click="handleDelete(item.cart_item_id)">删除</el-button>
-          </div>
-        </div>
+    <div class="cart-content">
+      <div class="cart-header">
+        <h2>我的购物车</h2>
       </div>
 
-      <div class="cart-footer">
-        <div class="cart-summary">
-          <p>商品总数：{{ cartStore.totalItems() }} 件</p>
-          <p class="total-amount">合计：¥{{ formatPrice(cartStore.totalAmount()) }}</p>
-        </div>
-        <el-button type="primary" size="large">去结算</el-button>
+      <div v-if="cartStore.cartItems.length === 0" class="empty-cart">
+        <el-empty description="购物车是空的" />
       </div>
-    </template>
+
+      <template v-else>
+        <div class="cart-list">
+          <table class="cart-table">
+            <thead>
+              <tr>
+                <th class="col-checkbox">
+                  <el-checkbox
+                    :model-value="isAllSelected"
+                    @change="toggleSelectAll"
+                  />
+                </th>
+                <th class="col-image">商品图片</th>
+                <th class="col-info">商品信息</th>
+                <th class="col-quantity">数量</th>
+                <th class="col-total text-right">小计</th>
+                <th class="col-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in cartStore.cartItems" :key="item.cart_item_id" class="cart-item">
+                <td class="col-checkbox">
+                  <el-checkbox
+                    :model-value="selectedItems.has(item.cart_item_id)"
+                    @change="() => toggleItem(item.cart_item_id)"
+                  />
+                </td>
+                <td class="col-image">
+                  <img :src="formatImageUrl(item.commodity_img)" :alt="item.commodity_name" @click="goToDetail(item.commodity_id)">
+                </td>
+                <td class="col-info">
+                  <div class="info-content">
+                    <h3 class="commodity-name" @click="goToDetail(item.commodity_id)">
+                      {{ item.commodity_name }}
+                    </h3>
+                    <p class="price">¥{{ formatPrice(item.commodity_selling_price) }}</p>
+                  </div>
+                </td>
+                <td class="col-quantity">
+                  <el-input-number
+                    v-model="item.commodity_num"
+                    :min="1"
+                    :max="5"
+                    @change="(val) => handleUpdateQuantity(item.cart_item_id, val ?? 0)"
+                  />
+                </td>
+                <td class="col-total text-right">
+                  <p>¥{{ formatPrice(item.commodity_selling_price * item.commodity_num) }}</p>
+                </td>
+                <td class="col-actions">
+                  <el-button type="danger" @click="handleDelete(item.cart_item_id)">删除</el-button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+    </div>
+
+    <div class="cart-footer" v-if="cartStore.cartItems.length > 0">
+      <div class="cart-footer-content">
+        <div class="cart-footer-left">
+          <el-checkbox
+            :model-value="isAllSelected"
+            @change="toggleSelectAll"
+          >全选</el-checkbox>
+          <div class="cart-summary">
+            <span>已选商品 {{ selectedCount }} 件</span>
+            <span class="total-amount">合计：¥{{ formatPrice(selectedTotal) }}</span>
+          </div>
+        </div>
+        <div class="cart-footer-right">
+          <el-button
+            type="primary"
+            size="large"
+            :disabled="selectedCount === 0"
+            class="checkout-button"
+          >
+            去结算
+          </el-button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .cart-container {
+  min-height: calc(100vh - 60px); /* 减去头部导航的高度 */
+  padding-bottom: 80px; /* 为固定底部留出空间 */
+  position: relative;
+}
+
+.cart-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -117,43 +202,60 @@ const formatImageUrl = (url: string) => {
   padding: 20px;
 }
 
-.cart-header-row {
-  display: flex;
-  align-items: center;
-  padding: 15px 0;
-  border-bottom: 2px solid #eee;
+.cart-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.cart-table th {
+  padding: 15px;
   font-weight: bold;
   color: #333;
-  gap: 20px;
+  text-align: left;
+  border-bottom: 2px solid #eee;
 }
 
-.cart-header-row .col-image {
-  height: auto;
-}
-
-.cart-item {
-  display: flex;
-  align-items: center;
-  padding: 20px 0;
+.cart-table td {
+  padding: 20px 15px;
+  text-align: left;
   border-bottom: 1px solid #eee;
-  gap: 20px;
+  vertical-align: middle;
 }
 
-.cart-item:last-child {
+.cart-item:last-child td {
   border-bottom: none;
+}
+
+.text-right {
+  text-align: right !important;
+  padding-right: 20px !important;
+}
+
+.col-checkbox {
+  width: 40px;
+  text-align: center !important;
+  padding: 0 !important;
+}
+
+.col-checkbox :deep(.el-checkbox) {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.col-checkbox :deep(.el-checkbox__input) {
+  margin: 0;
 }
 
 .col-image {
   width: 120px;
-  height: 120px;
-  margin-right: 20px;
-  text-align: center;
-  flex-shrink: 0;
+  text-align: center !important;
 }
 
 .col-image img {
-  width: 100%;
-  height: 100%;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
   border-radius: 4px;
   cursor: pointer;
@@ -165,16 +267,17 @@ const formatImageUrl = (url: string) => {
 }
 
 .col-info {
-  flex: 1;
-  min-width: 200px;
-  max-width: 400px;
-  padding-right: 20px;
-  overflow: hidden;
+  width: 400px;
+}
+
+.info-content {
+  padding: 0 20px;
 }
 
 .commodity-name {
   margin: 0 0 10px;
-  font-size: 16px;
+  font-size: 14px;
+  line-height: 1.4;
   cursor: pointer;
   transition: color 0.2s;
   overflow: hidden;
@@ -191,54 +294,97 @@ const formatImageUrl = (url: string) => {
 
 .price {
   color: #ff6b6b;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   margin: 0;
 }
 
 .col-quantity {
+  width: 180px;
+  text-align: center !important;
+}
+
+.col-quantity :deep(.el-input-number) {
   width: 120px;
-  text-align: center;
-  flex-shrink: 0;
 }
 
 .col-total {
-  width: 120px;
-  text-align: center;
-  font-size: 16px;
-  font-weight: bold;
-  color: #ff6b6b;
-  flex-shrink: 0;
+  width: 160px;
+  text-align: center !important;
 }
 
 .col-total p {
   margin: 0;
+  color: #ff6b6b;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
 }
 
 .col-actions {
-  width: 80px;
-  text-align: center;
-  flex-shrink: 0;
+  width: 100px;
+  text-align: center !important;
 }
 
 .cart-footer {
-  margin-top: 20px;
-  padding: 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background: #fff;
-  border-radius: 8px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.cart-footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.cart-footer-left {
+  display: flex;
+  align-items: center;
+}
+
+.cart-footer-left .el-checkbox {
+  margin: 0 40px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .cart-summary {
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.cart-summary > span {
+  margin-right: 30px;
+}
+
+.cart-summary > span:last-child {
+  margin-right: 0;
 }
 
 .total-amount {
   color: #ff6b6b;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
+}
+
+.checkout-button {
+  min-width: 120px;
+  margin-left: 20px;
 }
 
 .empty-cart {

@@ -1,10 +1,8 @@
 <template>
-  <footer class="app-footer">
-    <div class="container-main">
-      <div class="footer-content">
-        <div class="copyright">
-          &copy; {{ currentYear }} Go Mall商城 版权所有
-        </div>
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="copyright">
+        &copy; {{ currentYear }} Go Mall商城 版权所有
       </div>
     </div>
   </footer>
@@ -17,18 +15,21 @@ const currentYear = computed(() => new Date().getFullYear())
 </script>
 
 <style scoped lang="scss">
-.app-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+.footer {
   background-color: #f5f5f5;
   padding: 20px 0;
+  text-align: center;
+  color: #666;
+}
 
-  .footer-content {
-    text-align: center;
-    color: #666;
-  }
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.copyright {
+  margin: 0;
+  font-size: 14px;
 }
 </style>
