@@ -7,9 +7,9 @@
       </el-button>
       <el-breadcrumb separator=">>">
         <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-        <el-breadcrumb-item>美妆 清洁 宠物</el-breadcrumb-item>
+        <!-- <el-breadcrumb-item>美妆 清洁 宠物</el-breadcrumb-item>
         <el-breadcrumb-item>美妆</el-breadcrumb-item>
-        <el-breadcrumb-item>口红</el-breadcrumb-item>
+        <el-breadcrumb-item>口红</el-breadcrumb-item> -->
       </el-breadcrumb>
     </div>
 

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useCartStore } from '@/stores/cart'
+import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { formatPrice } from '@/utils/format'
 
 const cartStore = useCartStore()
+const router = useRouter()
 
 // 在组件挂载时获取购物车列表
 onMounted(() => {
@@ -30,6 +32,11 @@ const handleDelete = async (itemId: number) => {
   await cartStore.removeItemFromCart(itemId)
 }
 
+// 跳转到商品详情页
+const goToDetail = (commodityId: number) => {
+  router.push(`/commodity/${commodityId}`)
+}
+
 const formatImageUrl = (url: string) => {
   if (!url) return '';
   return url.replace('https://', 'http://');
@@ -49,11 +56,13 @@ const formatImageUrl = (url: string) => {
     <template v-else>
       <div class="cart-list">
         <div v-for="item in cartStore.cartItems" :key="item.cart_item_id" class="cart-item">
-          <div class="item-image">
+          <div class="item-image" @click="goToDetail(item.commodity_id)">
             <img :src="formatImageUrl(item.commodity_img)" :alt="item.commodity_name">
           </div>
           <div class="item-info">
-            <h3>{{ item.commodity_name }}</h3>
+            <h3 class="commodity-name" @click="goToDetail(item.commodity_id)">
+              {{ item.commodity_name }}
+            </h3>
             <p class="price">¥{{ formatPrice(item.commodity_selling_price) }}</p>
           </div>
           <div class="item-quantity">
@@ -116,6 +125,12 @@ const formatImageUrl = (url: string) => {
   width: 120px;
   height: 120px;
   margin-right: 20px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.item-image:hover {
+  opacity: 0.8;
 }
 
 .item-image img {
@@ -129,9 +144,15 @@ const formatImageUrl = (url: string) => {
   flex: 1;
 }
 
-.item-info h3 {
+.commodity-name {
   margin: 0 0 10px;
   font-size: 16px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.commodity-name:hover {
+  color: #409EFF;
 }
 
 .price {
