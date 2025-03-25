@@ -55,17 +55,24 @@ const formatImageUrl = (url: string) => {
 
     <template v-else>
       <div class="cart-list">
+        <div class="cart-header-row">
+          <div class="col-image">商品图片</div>
+          <div class="col-info">商品信息</div>
+          <div class="col-quantity">数量</div>
+          <div class="col-total">小计</div>
+          <div class="col-actions">操作</div>
+        </div>
         <div v-for="item in cartStore.cartItems" :key="item.cart_item_id" class="cart-item">
-          <div class="item-image" @click="goToDetail(item.commodity_id)">
+          <div class="col-image" @click="goToDetail(item.commodity_id)">
             <img :src="formatImageUrl(item.commodity_img)" :alt="item.commodity_name">
           </div>
-          <div class="item-info">
+          <div class="col-info">
             <h3 class="commodity-name" @click="goToDetail(item.commodity_id)">
               {{ item.commodity_name }}
             </h3>
             <p class="price">¥{{ formatPrice(item.commodity_selling_price) }}</p>
           </div>
-          <div class="item-quantity">
+          <div class="col-quantity">
             <el-input-number
               v-model="item.commodity_num"
               :min="1"
@@ -73,10 +80,10 @@ const formatImageUrl = (url: string) => {
               @change="(val) => handleUpdateQuantity(item.cart_item_id, val ?? 0)"
             />
           </div>
-          <div class="item-total">
-            <p>小计：¥{{ formatPrice(item.commodity_selling_price * item.commodity_num) }}</p>
+          <div class="col-total">
+            <p>¥{{ formatPrice(item.commodity_selling_price * item.commodity_num) }}</p>
           </div>
-          <div class="item-actions">
+          <div class="col-actions">
             <el-button type="danger" @click="handleDelete(item.cart_item_id)">删除</el-button>
           </div>
         </div>
@@ -110,38 +117,59 @@ const formatImageUrl = (url: string) => {
   padding: 20px;
 }
 
+.cart-header-row {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 2px solid #eee;
+  font-weight: bold;
+  color: #333;
+  gap: 20px;
+}
+
+.cart-header-row .col-image {
+  height: auto;
+}
+
 .cart-item {
   display: flex;
   align-items: center;
   padding: 20px 0;
   border-bottom: 1px solid #eee;
+  gap: 20px;
 }
 
 .cart-item:last-child {
   border-bottom: none;
 }
 
-.item-image {
+.col-image {
   width: 120px;
   height: 120px;
   margin-right: 20px;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  text-align: center;
+  flex-shrink: 0;
 }
 
-.item-image:hover {
-  opacity: 0.8;
-}
-
-.item-image img {
+.col-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-.item-info {
+.col-image img:hover {
+  opacity: 0.8;
+}
+
+.col-info {
   flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+  padding-right: 20px;
+  overflow: hidden;
 }
 
 .commodity-name {
@@ -149,6 +177,12 @@ const formatImageUrl = (url: string) => {
   font-size: 16px;
   cursor: pointer;
   transition: color 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
 }
 
 .commodity-name:hover {
@@ -159,16 +193,32 @@ const formatImageUrl = (url: string) => {
   color: #ff6b6b;
   font-size: 18px;
   font-weight: bold;
+  margin: 0;
 }
 
-.item-quantity {
-  margin: 0 40px;
+.col-quantity {
+  width: 120px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
-.item-total {
-  margin: 0 40px;
+.col-total {
+  width: 120px;
+  text-align: center;
   font-size: 16px;
   font-weight: bold;
+  color: #ff6b6b;
+  flex-shrink: 0;
+}
+
+.col-total p {
+  margin: 0;
+}
+
+.col-actions {
+  width: 80px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .cart-footer {
