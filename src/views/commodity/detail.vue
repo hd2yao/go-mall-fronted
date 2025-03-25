@@ -40,13 +40,14 @@
             <h1 class="commodity-name">{{ commodity.name }}</h1>
             <p class="intro">{{ commodity.intro }}</p>
           </div>
+          <div v-if="commodity.tag" class="commodity-tag">{{ commodity.tag }}</div>
 
           <div class="price-info">
             <div class="selling-price">
               <span class="label">售价：</span>
               <span class="price">¥{{ formatPrice(commodity.selling_price) }}</span>
             </div>
-            <div class="original-price">
+            <div class="original-price" v-if="commodity.original_price !== commodity.selling_price">
               <span class="label">原价：</span>
               <span class="price">¥{{ formatPrice(commodity.original_price) }}</span>
             </div>
@@ -370,5 +371,15 @@ onMounted(() => {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.commodity-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #ff4d4f;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-top: 8px;
 }
 </style>

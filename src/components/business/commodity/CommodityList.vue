@@ -10,8 +10,8 @@
           <h3 class="commodity-name">{{ item.name }}</h3>
           <p class="commodity-intro">{{ item.intro }}</p>
           <div class="commodity-price">
-            <span class="selling-price">¥{{ (item.selling_price / 100).toFixed(2) }}</span>
-            <span class="original-price">¥{{ (item.original_price / 100).toFixed(2) }}</span>
+            <span class="selling-price">¥{{ formatPrice(item.selling_price) }}</span>
+            <span class="original-price" v-if="item.original_price !== item.selling_price">¥{{ formatPrice(item.original_price) }}</span>
           </div>
           <div v-if="item.tag" class="commodity-tag">{{ item.tag }}</div>
         </div>
@@ -42,6 +42,7 @@ import { getCommodityListByCategory } from '@/api/commodity';
 import type { Commodity } from '@/api/commodity';
 import type { PaginationParams } from '@/types/api'
 import { useCommodityStore } from '@/stores/commodity';
+import { formatPrice } from '@/utils/format';
 
 const router = useRouter();
 const props = defineProps<{
