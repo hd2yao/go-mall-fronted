@@ -1,33 +1,83 @@
 <template>
   <div class="commodity-detail">
-    <div class="back-button">
-        <el-button @click="goBack">返回</el-button>
+    <div class="page-header">
+      <el-button class="back-button" @click="goBack">
+        <el-icon><ArrowLeft /></el-icon>
+        返回
+      </el-button>
+      <el-breadcrumb separator=">>">
+        <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+        <el-breadcrumb-item>美妆 清洁 宠物</el-breadcrumb-item>
+        <el-breadcrumb-item>美妆</el-breadcrumb-item>
+        <el-breadcrumb-item>口红</el-breadcrumb-item>
+      </el-breadcrumb>
     </div>
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="commodity" class="detail-container">
-      <div class="image-section">
-        <img :src="formatImageUrl(commodity.cover_img)" :alt="commodity.name" class="main-image">
-      </div>
-      <div class="info-section">
-        <h1 class="title">{{ commodity.name }}</h1>
-        <p class="intro">{{ commodity.intro }}</p>
-        <div class="price-section">
-          <div class="price">
-            <span class="selling-price">¥{{ (commodity.selling_price / 100).toFixed(2) }}</span>
-            <span class="original-price">¥{{ (commodity.original_price / 100).toFixed(2) }}</span>
+
+    <div v-if="error" class="error-message">
+      {{ error }}
+    </div>
+
+    <div v-else-if="commodity" class="detail-container" v-loading="loading">
+      <div class="commodity-container">
+        <div class="commodity-image">
+          <el-image
+            :src="formatImageUrl(commodity.cover_img)"
+            :alt="commodity.name"
+            fit="cover"
+            :preview-src-list="[formatImageUrl(commodity.cover_img)]"
+          >
+            <template #error>
+              <div class="image-error">
+                <el-icon><Picture /></el-icon>
+                <p>图片加载失败</p>
+              </div>
+            </template>
+          </el-image>
+        </div>
+
+        <div class="commodity-info">
+          <div class="basic-info">
+            <h1 class="commodity-name">{{ commodity.name }}</h1>
+            <p class="intro">{{ commodity.intro }}</p>
           </div>
-          <div v-if="commodity.tag" class="tag">{{ commodity.tag }}</div>
-        </div>
-        <div class="stock">库存: {{ commodity.stock_num }}件</div>
-        <div class="action-section">
-          <el-button type="primary" size="large" @click="addToCart">加入购物车</el-button>
-          <el-button type="danger" size="large" @click="buyNow">立即购买</el-button>
+
+          <div class="price-info">
+            <div class="selling-price">
+              <span class="label">售价：</span>
+              <span class="price">¥{{ formatPrice(commodity.selling_price) }}</span>
+            </div>
+            <div class="original-price">
+              <span class="label">原价：</span>
+              <span class="price">¥{{ formatPrice(commodity.original_price) }}</span>
+            </div>
+          </div>
+
+          <div class="quantity-selector">
+            <span class="label">数量：</span>
+            <el-input-number
+              v-model="quantity"
+              :min="1"
+              :max="5"
+              size="large"
+            />
+            <span class="stock">库存：{{ commodity.stock_num }}件</span>
+          </div>
+
+          <div class="actions">
+            <el-button type="primary" size="large" @click="addToCart" :disabled="commodity.stock_num === 0">
+              <el-icon><ShoppingCart /></el-icon>
+              {{ commodity.stock_num === 0 ? '已售罄' : '加入购物车' }}
+            </el-button>
+            <el-button type="danger" size="large" @click="buyNow" :disabled="commodity.stock_num === 0">
+              {{ commodity.stock_num === 0 ? '已售罄' : '立即购买' }}
+            </el-button>
+          </div>
         </div>
       </div>
-      <div class="detail-content" v-if="commodity.detail_content">
-        <h2>商品详情</h2>
-        <div v-html="commodity.detail_content"></div>
+
+      <div v-if="commodity.detail_content" class="commodity-detail-content">
+        <h3 class="detail-title">商品详情</h3>
+        <div class="detail-content" v-html="commodity.detail_content"></div>
       </div>
     </div>
   </div>
@@ -37,44 +87,74 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { getCommodityDetail } from '@/api/commodity';
-import type { CommodityDetail } from '@/api/commodity';
+import { ArrowLeft, Picture, ShoppingCart } from '@element-plus/icons-vue';
+import { getCommodityDetail, CommodityDetail } from '@/api/commodity';
+import { formatPrice } from '@/utils/format';
+import { useCartStore } from '@/stores/cart';
+import { getAccessToken } from '@/utils/token';
 
 const route = useRoute();
 const router = useRouter();
+const cartStore = useCartStore();
 
 const commodity = ref<CommodityDetail | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
+const quantity = ref(1);
 
 const formatImageUrl = (url: string) => {
+  if (!url) return '';
   return url.replace('https://', 'http://');
 };
 
 const fetchCommodityDetail = async () => {
-  const commodityId = Number(route.params.id);
-  if (!commodityId) {
-    error.value = '商品ID无效';
-    return;
-  }
-
   try {
     loading.value = true;
-    const response = await getCommodityDetail(commodityId);
-    commodity.value = response.data.data;
+    const res = await getCommodityDetail(Number(route.params.id));
+    if (res.data.code === 0) {
+      commodity.value = res.data.data;
+    } else {
+      error.value = res.data.msg;
+    }
   } catch (err) {
     error.value = '获取商品详情失败';
-    console.error('获取商品详情失败:', err);
   } finally {
     loading.value = false;
   }
 };
 
-const addToCart = () => {
-  ElMessage.info('购物车功能开发中...');
+const addToCart = async () => {
+  if (!getAccessToken()) {
+    router.push({
+      name: 'Login',
+      query: { redirect: route.fullPath }
+    });
+    return;
+  }
+
+  if (quantity.value > 5) {
+    ElMessage.warning('单个商品最多只能购买5个');
+    return;
+  }
+
+  try {
+    await cartStore.addItemToCart({
+      commodity_id: commodity.value?.id || 0,
+      commodity_num: quantity.value
+    });
+  } catch (error) {
+    console.error('加入购物车失败:', error);
+  }
 };
 
 const buyNow = () => {
+  if (!getAccessToken()) {
+    router.push({
+      name: 'Login',
+      query: { redirect: route.fullPath }
+    });
+    return;
+  }
   ElMessage.info('立即购买功能开发中...');
 };
 
@@ -92,137 +172,203 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  position: relative;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 }
 
 .back-button {
-  margin-bottom: 20px;
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 20px;
 }
 
-.back-button .el-button {
-  background: #fff;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+:deep(.el-breadcrumb) {
+  flex: 1;
+  font-size: 14px;
 }
 
-.loading, .error {
-  text-align: center;
-  padding: 40px;
-  font-size: 16px;
+:deep(.el-breadcrumb__item) {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-breadcrumb__inner) {
   color: #666;
 }
 
-.error {
-  color: #ff4d4f;
+:deep(.el-breadcrumb__inner.is-link:hover) {
+  color: #409eff;
+}
+
+:deep(.el-breadcrumb__separator) {
+  margin: 0 8px;
+  color: #666;
+}
+
+.page-title {
+  margin: 0 0 0 20px;
+  font-size: 20px;
+  color: #333;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .detail-container {
-  display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 40px;
-  background: white;
-  padding: 20px;
+  background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 }
 
-.image-section {
-  width: 100%;
+.commodity-container {
+  display: flex;
+  gap: 40px;
+  padding: 20px;
 }
 
-.main-image {
-  width: 100%;
+.commodity-image {
+  width: 400px;
   height: 400px;
-  object-fit: cover;
-  border-radius: 4px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
 }
 
-.info-section {
-  padding: 20px 0;
+.image-error {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #909399;
+  background: #f5f7fa;
 }
 
-.title {
+.image-error .el-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.commodity-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.basic-info {
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.commodity-name {
+  margin: 0 0 15px;
   font-size: 24px;
-  margin: 0 0 16px;
+  color: #333;
+  line-height: 1.4;
 }
 
 .intro {
-  font-size: 16px;
   color: #666;
-  margin: 0 0 24px;
+  line-height: 1.6;
+  margin: 0;
 }
 
-.price-section {
-  margin-bottom: 24px;
-}
-
-.price {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 8px;
+.price-info {
+  padding: 15px;
+  background: #f8f8f8;
+  border-radius: 4px;
 }
 
 .selling-price {
-  font-size: 28px;
-  color: #ff4d4f;
-  font-weight: bold;
+  margin-bottom: 10px;
 }
 
-.original-price {
+.selling-price .label {
   font-size: 16px;
+  color: #666;
+}
+
+.selling-price .price {
+  color: #ff6b6b;
+  font-size: 28px;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.original-price .label {
+  color: #999;
+}
+
+.original-price .price {
   color: #999;
   text-decoration: line-through;
+  margin-left: 10px;
 }
 
-.tag {
-  display: inline-block;
-  padding: 4px 12px;
-  background-color: #ff4d4f;
-  color: white;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.stock {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 24px;
-}
-
-.action-section {
+.quantity-selector {
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: 10px;
 }
 
-.detail-content {
-  grid-column: 1 / -1;
-  margin-top: 40px;
-  padding-top: 40px;
+.quantity-selector .label {
+  color: #666;
+}
+
+.quantity-selector .stock {
+  color: #999;
+  margin-left: 20px;
+}
+
+.actions {
+  display: flex;
+  gap: 20px;
+}
+
+.actions .el-button {
+  flex: 1;
+}
+
+.actions .el-icon {
+  margin-right: 5px;
+}
+
+.commodity-detail-content {
+  padding: 20px;
   border-top: 1px solid #eee;
 }
 
-.detail-content h2 {
-  font-size: 20px;
-  margin-bottom: 20px;
+.detail-title {
+  font-size: 18px;
+  color: #333;
+  margin: 0 0 20px;
+  padding-left: 10px;
+  border-left: 4px solid #ff6b6b;
 }
 
-.custom-back-btn {
-  padding: 8px 16px;
-  background-color: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  color: #606266;
-  cursor: pointer;
-  transition: all 0.3s;
+.detail-content {
+  color: #666;
+  line-height: 1.8;
 }
 
-.custom-back-btn:hover {
-  color: #409eff;
-  border-color: #c6e2ff;
-  background-color: #ecf5ff;
+.error-message {
+  text-align: center;
+  color: #ff6b6b;
+  padding: 40px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

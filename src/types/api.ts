@@ -1,4 +1,5 @@
-export interface ApiResponse<T> {
+// API响应的通用类型
+export interface ApiResponse<T = any> {
   code: number
   msg: string
   request_id: string
