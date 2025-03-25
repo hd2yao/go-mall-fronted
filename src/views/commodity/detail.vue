@@ -19,7 +19,11 @@
 
     <div v-else-if="commodity" class="detail-container" v-loading="loading">
       <div class="commodity-container">
-        <div class="commodity-image">
+        <div class="commodity-image"
+          @mousemove="handleMouseMove"
+          @mouseenter="showMagnifier = true"
+          @mouseleave="showMagnifier = false"
+        >
           <el-image
             :src="formatImageUrl(commodity.cover_img)"
             :alt="commodity.name"
@@ -33,6 +37,9 @@
               </div>
             </template>
           </el-image>
+          <div v-show="showMagnifier" class="magnifier" :style="magnifierStyle">
+            <img :src="formatImageUrl(commodity.cover_img)" :style="magnifierImageStyle" alt="放大镜">
+          </div>
         </div>
 
         <div class="commodity-info">
@@ -85,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { ArrowLeft, Picture, ShoppingCart } from '@element-plus/icons-vue';
@@ -102,6 +109,10 @@ const commodity = ref<CommodityDetail | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const quantity = ref(1);
+const showMagnifier = ref(false);
+const magnifierPos = ref({ x: 0, y: 0 });
+const magnifierSize = 150; // 放大镜大小
+const zoomLevel = 2; // 放大倍数
 
 const formatImageUrl = (url: string) => {
   if (!url) return '';
@@ -162,6 +173,46 @@ const buyNow = () => {
 const goBack = () => {
   router.back();
 };
+
+const handleMouseMove = (e: MouseEvent) => {
+  const target = e.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+
+  // 计算鼠标相对图片容器的位置
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  // 允许放大镜移动到边缘
+  magnifierPos.value = {
+    x: Math.min(Math.max(0, x), rect.width),
+    y: Math.min(Math.max(0, y), rect.height)
+  };
+};
+
+const magnifierStyle = computed(() => ({
+  width: `${magnifierSize}px`,
+  height: `${magnifierSize}px`,
+  left: `${Math.min(Math.max(magnifierSize/2, magnifierPos.value.x), 400 - magnifierSize/2) - magnifierSize/2}px`,
+  top: `${Math.min(Math.max(magnifierSize/2, magnifierPos.value.y), 400 - magnifierSize/2) - magnifierSize/2}px`
+}));
+
+const magnifierImageStyle = computed(() => {
+  const imageSize = 400; // 图片容器的大小
+
+  // 计算放大镜中心点相对于图片的位置（0-1范围）
+  const centerX = magnifierPos.value.x / imageSize;
+  const centerY = magnifierPos.value.y / imageSize;
+
+  // 计算图片的偏移量
+  const x = -centerX * (imageSize * zoomLevel - magnifierSize);
+  const y = -centerY * (imageSize * zoomLevel - magnifierSize);
+
+  return {
+    width: `${imageSize * zoomLevel}px`,
+    height: `${imageSize * zoomLevel}px`,
+    transform: `translate(${x}px, ${y}px)`
+  };
+});
 
 onMounted(() => {
   fetchCommodityDetail();
@@ -244,6 +295,8 @@ onMounted(() => {
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
+  position: relative;
+  cursor: none;
 }
 
 .image-error {
@@ -381,5 +434,24 @@ onMounted(() => {
   border-radius: 4px;
   font-size: 12px;
   margin-top: 8px;
+}
+
+.magnifier {
+  position: absolute;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.magnifier img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>
