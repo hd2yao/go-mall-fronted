@@ -94,21 +94,24 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true
     }
   },
-  // {
-  //   path: '/order/create',
-  //   component: () => import('@/views/order/Create.vue'),
-  //   meta: { title: '创建订单', requiresAuth: true }
-  // },
-  // {
-  //   path: '/order/list',
-  //   component: () => import('@/views/order/List.vue'),
-  //   meta: { title: '我的订单', requiresAuth: true }
-  // },
-  // {
-  //   path: '/order/:orderNo',
-  //   component: () => import('@/views/order/Detail.vue'),
-  //   meta: { title: '订单详情', requiresAuth: true }
-  // },
+  {
+    path: '/order/list',
+    name: 'OrderList',
+    component: () => import('@/views/order/OrderList.vue'),
+    meta: {
+      title: '我的订单',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/order/:orderNo',
+    name: 'OrderDetail',
+    component: () => import('@/views/order/OrderDetail.vue'),
+    meta: {
+      title: '订单详情',
+      requiresAuth: true
+    }
+  },
   // {
   //   path: '/user',
   //   component: () => import('@/views/user/Layout.vue'),

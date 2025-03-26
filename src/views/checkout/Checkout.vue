@@ -10,6 +10,7 @@ import type { CartBillResponse } from '@/api/cart'
 import { Plus, ArrowLeft } from '@element-plus/icons-vue'
 import { getDirectBuyBillData } from '@/utils/directBuy'
 import { useCartStore } from '@/stores/cart'
+import { createOrder } from '@/api/order'
 
 const route = useRoute()
 const router = useRouter()
@@ -113,7 +114,7 @@ const goToAddAddress = () => {
 }
 
 // 提交订单
-const submitOrder = () => {
+const submitOrder = async () => {
   if (!selectedAddressId.value) {
     ElMessage.warning('请选择收货地址')
     return
@@ -124,57 +125,55 @@ const submitOrder = () => {
     return
   }
 
-  // 构建订单参数
-  const orderParams = {
-    addressId: selectedAddressId.value,
-    paymentMethod: paymentMethod.value,
-    invoiceType: invoiceType.value === 'none' ? null : invoiceType.value,
-    orderSource: isDirectBuy.value ? 'direct_buy' : 'cart',
-    items: isDirectBuy.value
-      ? [{
-          commodityId: directBuyCommodityId.value,
-          quantity: directBuyQuantity.value
-        }]
-      : billData.value.items.map(item => ({
-          cartItemId: item.cart_item_id,
-          commodityId: item.commodity_id,
-          quantity: item.commodity_num
-        }))
-  }
+  try {
+    // 构建购物项ID列表
+    const cartItemIds = isDirectBuy.value
+      ? [] // 直接购买模式不传购物车ID
+      : billData.value.items.map(item => item.cart_item_id)
 
-  console.log('提交订单参数:', orderParams)
+    // 确认提交订单
+    const result = await ElMessageBox.confirm('确认提交订单吗？', '提示', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
 
-  // 这里是模拟订单提交，实际项目中应该调用创建订单的API
-  ElMessageBox.confirm('确认提交订单吗？', '提示', {
-    confirmButtonText: '确认',
-    cancelButtonText: '取消',
-    type: 'info'
-  }).then(() => {
-    // 模拟成功下单
-    ElMessage.success('订单提交成功！')
+    if (result === 'confirm') {
+      loading.value = true
 
-    // 根据购买方式处理购物车
-    if (!isDirectBuy.value) {
-      // 如果是从购物车购买，成功下单后需要从购物车中删除这些商品
-      // 实际项目中，这部分逻辑可能在后端处理，或者在订单创建成功的回调中处理
-      // 清空选中状态，避免返回购物车时仍显示已提交的商品
-      cartStore.clearSelectedItems()
+      // 根据购买方式处理
+      if (isDirectBuy.value) {
+        // 直接购买模式需要先加入购物车
+        // 实际项目中可能有专门的直接购买API
+        // 这里我们先简单跳转到商品页面
+        ElMessage.info('直接购买功能暂未实现')
+        router.push(`/commodity/${directBuyCommodityId.value}`)
+        return
+      } else {
+        // 从购物车购买
+        const res = await createOrder(cartItemIds, selectedAddressId.value)
+        if (res.data.code === 0) {
+          const orderNo = res.data.data.order_no
+          ElMessage.success('订单提交成功！')
 
-      // 提示用户
-      ElMessage.info('已从购物车中移除所购买的商品')
+          // 清空选中状态
+          cartStore.clearSelectedItems()
 
-      // 跳转到订单详情或订单列表页面
-      // 这里暂时简单返回首页
-      router.push('/')
-    } else {
-      // 如果是直接购买，直接跳转到订单详情或订单列表页面
-      // 这里暂时简单返回首页
-      router.push('/')
+          // 跳转到订单详情页
+          router.push(`/order/${orderNo}`)
+        } else {
+          ElMessage.error(res.data.msg || '创建订单失败')
+        }
+      }
     }
-  }).catch(() => {
-    // 用户取消提交
-    ElMessage.info('已取消提交订单')
-  })
+  } catch (error: any) {
+    console.error('提交订单失败:', error)
+    if (error !== 'cancel') {
+      ElMessage.error('提交订单失败：' + (error.message || '未知错误'))
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 // 格式化图片 URL
