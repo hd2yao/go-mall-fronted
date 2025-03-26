@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrderDetail, cancelOrder, getPayTypeText, getPayStateText, shouldOrderBeCancelled, reorder } from '@/api/order'
+import { getOrderDetail, cancelOrder, getPayTypeText, getPayStateText, shouldOrderBeCancelled, reorder, createOrderPayment, PaymentResponse } from '@/api/order'
 import type { OrderDetail } from '@/api/order'
 import { formatPrice } from '@/utils/format'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -203,6 +203,10 @@ const canPay = computed(() => {
   return orderDetail.value.status === '待付款';
 })
 
+// 微信支付的配置参数
+const wxPayConfig = ref<PaymentResponse | null>(null)
+const payLoading = ref(false)
+
 // 跳转到支付页面（示例函数，实际未实现）
 const goPay = () => {
   if (!orderDetail.value) return
@@ -231,18 +235,107 @@ const goPay = () => {
 }
 
 // 开始支付流程
-const startPayProcess = (payType: number) => {
+const startPayProcess = async (payType: number) => {
   if (!orderDetail.value) return
 
   const payTypeText = payType === 1 ? '微信支付' : '支付宝支付'
-  ElMessage.success(`已选择${payTypeText}，正在跳转到支付页面...`)
+  ElMessage.info(`已选择${payTypeText}，正在准备支付参数...`)
 
-  // 这里实际项目中应该调用支付API，获取支付链接或二维码
-  // 模拟延迟后显示支付成功
-  setTimeout(() => {
-    ElMessage.success('支付成功！')
-    fetchOrderDetail() // 刷新订单状态
-  }, 2000)
+  payLoading.value = true
+  try {
+    // 调用创建支付订单的API
+    const res = await createOrderPayment(orderNo.value, payType)
+
+    if (res.data.code === 0 && res.data.data) {
+      // 获取支付参数
+      const payConfig = res.data.data as PaymentResponse
+      wxPayConfig.value = payConfig
+
+      if (payType === 1) {
+        // 微信支付 - 调用微信支付SDK
+        callWxPay(payConfig)
+      } else if (payType === 2) {
+        // 支付宝支付 - 目前后端暂不支持，显示提示
+        ElMessage.warning('暂不支持支付宝支付，请选择微信支付')
+      }
+    } else {
+      ElMessage.error(res.data.msg || '获取支付参数失败')
+    }
+  } catch (error: any) {
+    console.error('获取支付参数失败:', error)
+    ElMessage.error('获取支付参数失败: ' + (error.message || '未知错误'))
+  } finally {
+    payLoading.value = false
+  }
+}
+
+// 调用微信支付SDK
+const callWxPay = (payConfig: PaymentResponse) => {
+  // 判断环境
+  if (typeof window.WeixinJSBridge === 'undefined') {
+    // 模拟微信支付环境
+    ElMessageBox.alert(
+      `<div style="text-align:center">
+        <div style="font-size:18px;margin-bottom:10px">模拟微信支付</div>
+        <div style="background:#f5f5f5;padding:15px;border-radius:4px;text-align:left;margin-bottom:15px">
+          <div>订单号：${orderNo.value}</div>
+          <div>金额：¥${orderDetail.value ? formatPrice(orderDetail.value.pay_money) : '0.00'}</div>
+        </div>
+        <div style="color:#999">（因在浏览器环境中无法调用真实微信支付，此处仅做演示）</div>
+      </div>`,
+      '微信支付',
+      {
+        confirmButtonText: '确认支付',
+        dangerouslyUseHTMLString: true,
+        callback: (action: string) => {
+          if (action === 'confirm') {
+            // 模拟支付成功
+            ElMessage.success('支付成功！')
+            // 刷新订单状态
+            setTimeout(() => {
+              fetchOrderDetail()
+            }, 1000)
+          }
+        }
+      }
+    )
+  } else {
+    // 真实微信环境 - 调用WeixinJSBridge
+    window.WeixinJSBridge.invoke(
+      'getBrandWCPayRequest',
+      {
+        "appId": payConfig.appId,
+        "timeStamp": payConfig.timeStamp,
+        "nonceStr": payConfig.nonceStr,
+        "package": payConfig.package,
+        "signType": payConfig.signType,
+        "paySign": payConfig.paySign
+      },
+      (res: any) => {
+        if (res.err_msg === 'get_brand_wcpay_request:ok') {
+          // 支付成功
+          ElMessage.success('支付成功！')
+          // 刷新订单状态
+          fetchOrderDetail()
+        } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
+          // 用户取消
+          ElMessage.info('您已取消支付')
+        } else {
+          // 支付失败
+          ElMessage.error('支付失败，请重试')
+        }
+      }
+    )
+  }
+}
+
+// 声明全局Window接口，添加WeixinJSBridge属性
+declare global {
+  interface Window {
+    WeixinJSBridge?: {
+      invoke: (method: string, config: any, callback: (res: any) => void) => void
+    }
+  }
 }
 
 // 返回订单列表

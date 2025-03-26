@@ -64,6 +64,49 @@ export function createOrder(cartItemIds: number[], userAddressId: number) {
   })
 }
 
+/**
+ * 创建直接购买订单
+ * @param commodityId 商品ID
+ * @param quantity 购买数量
+ * @param userAddressId 用户地址ID
+ */
+export function createDirectOrder(commodityId: number, quantity: number, userAddressId: number) {
+  return request({
+    url: '/order/direct-create',
+    method: 'POST',
+    data: {
+      commodity_id: commodityId,
+      quantity: quantity,
+      user_address_id: userAddressId
+    }
+  })
+}
+
+/**
+ * 发起订单支付
+ * @param orderNo 订单编号
+ * @param payType 支付类型 1：微信；2：暂无
+ */
+export interface PaymentResponse {
+  appId: string
+  timeStamp: string
+  nonceStr: string
+  package: string
+  signType: string
+  paySign: string
+}
+
+export function createOrderPayment(orderNo: string, payType: number) {
+  return request({
+    url: '/order/create-pay',
+    method: 'POST',
+    data: {
+      order_no: orderNo,
+      pay_type: payType
+    }
+  })
+}
+
 // 订单项类型
 export interface OrderItem {
   commodity_id: number

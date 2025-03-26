@@ -10,7 +10,7 @@ import type { CartBillResponse } from '@/api/cart'
 import { Plus, ArrowLeft } from '@element-plus/icons-vue'
 import { getDirectBuyBillData } from '@/utils/directBuy'
 import { useCartStore } from '@/stores/cart'
-import { createOrder } from '@/api/order'
+import { createOrder, createDirectOrder } from '@/api/order'
 
 const route = useRoute()
 const router = useRouter()
@@ -143,12 +143,31 @@ const submitOrder = async () => {
 
       // 根据购买方式处理
       if (isDirectBuy.value) {
-        // 直接购买模式需要先加入购物车
-        // 实际项目中可能有专门的直接购买API
-        // 这里我们先简单跳转到商品页面
-        ElMessage.info('直接购买功能暂未实现')
-        router.push(`/commodity/${directBuyCommodityId.value}`)
-        return
+        // 直接购买模式
+        if (!directBuyCommodityId.value || !selectedAddressId.value) {
+          ElMessage.error('商品信息或收货地址不完整')
+          return
+        }
+
+        try {
+          const res = await createDirectOrder(
+            directBuyCommodityId.value,
+            directBuyQuantity.value,
+            selectedAddressId.value
+          )
+
+          if (res.data.code === 0) {
+            const orderNo = res.data.data.order_no
+            ElMessage.success('订单提交成功！')
+            // 跳转到订单详情页并自动触发支付
+            router.push(`/order/${orderNo}?action=pay`)
+          } else {
+            ElMessage.error(res.data.msg || '创建订单失败')
+          }
+        } catch (error: any) {
+          console.error('直接购买失败:', error)
+          ElMessage.error('创建订单失败：' + (error.message || '未知错误'))
+        }
       } else {
         // 从购物车购买
         const res = await createOrder(cartItemIds, selectedAddressId.value)
@@ -160,7 +179,7 @@ const submitOrder = async () => {
           cartStore.clearSelectedItems()
 
           // 跳转到订单详情页
-          router.push(`/order/${orderNo}`)
+          router.push(`/order/${orderNo}?action=pay`)
         } else {
           ElMessage.error(res.data.msg || '创建订单失败')
         }
