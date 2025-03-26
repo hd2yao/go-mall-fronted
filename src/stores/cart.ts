@@ -9,6 +9,8 @@ export const useCartStore = defineStore('cart', () => {
   const cartItems = ref<CartItem[]>([])
   // 结算账单
   const bill = ref<CartBillResponse | null>(null)
+  // 选中的购物车项目
+  const selectedCartItems = ref<Set<number>>(new Set())
 
   // 获取购物车列表
   const fetchCartList = async () => {
@@ -54,6 +56,10 @@ export const useCartStore = defineStore('cart', () => {
       const res = await deleteCartItem(itemId)
       if (res.data.code === 0) {
         ElMessage.success('删除成功')
+        // 如果删除的商品在选中列表中，也将其从选中列表移除
+        if (selectedCartItems.value.has(itemId)) {
+          selectedCartItems.value.delete(itemId)
+        }
         await fetchCartList()
       }
     } catch (error) {
@@ -86,15 +92,34 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  // 保存选中的购物车项目
+  const saveSelectedItems = (itemIds: number[]) => {
+    selectedCartItems.value = new Set(itemIds)
+  }
+
+  // 获取选中的购物车项目
+  const getSelectedItems = () => {
+    return Array.from(selectedCartItems.value)
+  }
+
+  // 清空选中的购物车项目
+  const clearSelectedItems = () => {
+    selectedCartItems.value.clear()
+  }
+
   return {
     cartItems,
     bill,
+    selectedCartItems,
     fetchCartList,
     addItemToCart,
     updateItemInCart,
     removeItemFromCart,
     totalItems,
     totalAmount,
-    fetchCartBill
+    fetchCartBill,
+    saveSelectedItems,
+    getSelectedItems,
+    clearSelectedItems
   }
 })

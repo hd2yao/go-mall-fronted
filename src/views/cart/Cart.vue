@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
@@ -7,45 +7,42 @@ import { formatPrice } from '@/utils/format'
 
 const cartStore = useCartStore()
 const router = useRouter()
-const selectedItems = ref<Set<number>>(new Set())
 
 // 计算选中商品的总价
 const selectedTotal = computed(() => {
   return cartStore.cartItems
-    .filter(item => selectedItems.value.has(item.cart_item_id))
+    .filter(item => cartStore.selectedCartItems.has(item.cart_item_id))
     .reduce((total, item) => total + item.commodity_selling_price * item.commodity_num, 0)
 })
 
 // 计算选中商品的数量
 const selectedCount = computed(() => {
-  return selectedItems.value.size
+  return cartStore.selectedCartItems.size
 })
 
 // 全选状态
 const isAllSelected = computed(() => {
-  return cartStore.cartItems.length > 0 && selectedItems.value.size === cartStore.cartItems.length
+  return cartStore.cartItems.length > 0 && cartStore.selectedCartItems.size === cartStore.cartItems.length
 })
 
 // 切换全选状态
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
-    selectedItems.value.clear()
+    cartStore.clearSelectedItems()
   } else {
-    cartStore.cartItems.forEach(item => {
-      selectedItems.value.add(item.cart_item_id)
-    })
+    const allItems = cartStore.cartItems.map(item => item.cart_item_id)
+    cartStore.saveSelectedItems(allItems)
   }
-  selectedItems.value = new Set(selectedItems.value)
 }
 
 // 切换单个商品选中状态
 const toggleItem = (itemId: number) => {
-  if (selectedItems.value.has(itemId)) {
-    selectedItems.value.delete(itemId)
+  if (cartStore.selectedCartItems.has(itemId)) {
+    cartStore.selectedCartItems.delete(itemId)
   } else {
-    selectedItems.value.add(itemId)
+    cartStore.selectedCartItems.add(itemId)
   }
-  selectedItems.value = new Set(selectedItems.value)
+  cartStore.saveSelectedItems(cartStore.getSelectedItems())
 }
 
 // 在组件挂载时获取购物车列表
@@ -84,13 +81,13 @@ const formatImageUrl = (url: string) => {
 
 // 处理结算
 const handleCheckout = async () => {
-  if (selectedItems.value.size === 0) {
+  if (cartStore.selectedCartItems.size === 0) {
     ElMessageBox.alert('请选择要结算的商品', '提示')
     return
   }
 
   // 获取选中的商品ID
-  const itemIds = Array.from(selectedItems.value)
+  const itemIds = cartStore.getSelectedItems()
 
   // 跳转到结算页面
   router.push({
@@ -135,7 +132,7 @@ const handleCheckout = async () => {
               <tr v-for="item in cartStore.cartItems" :key="item.cart_item_id" class="cart-item">
                 <td class="col-checkbox">
                   <el-checkbox
-                    :model-value="selectedItems.has(item.cart_item_id)"
+                    :model-value="cartStore.selectedCartItems.has(item.cart_item_id)"
                     @change="() => toggleItem(item.cart_item_id)"
                   />
                 </td>

@@ -7,10 +7,13 @@ import { getAddressList } from '@/api/user'
 import type { Address } from '@/api/user'
 import { getCartBill } from '@/api/cart'
 import type { CartBillResponse } from '@/api/cart'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, ArrowLeft } from '@element-plus/icons-vue'
+import { getDirectBuyBillData } from '@/utils/directBuy'
+import { useCartStore } from '@/stores/cart'
 
 const route = useRoute()
 const router = useRouter()
+const cartStore = useCartStore()
 const loading = ref(false)
 const addressList = ref<Address[]>([])
 const selectedAddressId = ref<number | null>(null)
@@ -24,6 +27,11 @@ const getItemIds = (): number[] => {
   if (!itemIdStr) return []
   return itemIdStr.split(',').map(id => parseInt(id))
 }
+
+// 检查是否是直接购买模式
+const isDirectBuy = computed(() => route.query.directBuy === 'true')
+const directBuyCommodityId = computed(() => route.query.commodityId ? parseInt(route.query.commodityId as string) : null)
+const directBuyQuantity = computed(() => route.query.quantity ? parseInt(route.query.quantity as string) : 1)
 
 // 获取地址列表
 const fetchAddressList = async () => {
@@ -49,24 +57,46 @@ const fetchAddressList = async () => {
 const fetchBillData = async () => {
   loading.value = true
   try {
-    const itemIds = getItemIds()
-    if (itemIds.length === 0) {
-      ElMessage.error('未选择商品')
-      router.push('/cart')
-      return
-    }
+    if (isDirectBuy.value) {
+      // 直接购买模式
+      if (!directBuyCommodityId.value) {
+        ElMessage.error('商品信息不存在')
+        router.push('/')
+        return
+      }
 
-    const res = await getCartBill(itemIds)
-    if (res.data.code === 0) {
-      billData.value = res.data.data
+      try {
+        // 使用直接购买工具函数处理
+        billData.value = await getDirectBuyBillData(
+          directBuyCommodityId.value,
+          directBuyQuantity.value
+        )
+      } catch (error: any) {
+        console.error('获取直接购买账单失败:', error)
+        ElMessage.error(error.message || '获取账单失败')
+        router.push('/')
+      }
     } else {
-      ElMessage.error('获取账单失败')
-      router.push('/cart')
+      // 购物车购买模式
+      const itemIds = getItemIds()
+      if (itemIds.length === 0) {
+        ElMessage.error('未选择商品')
+        router.push('/cart')
+        return
+      }
+
+      const res = await getCartBill(itemIds)
+      if (res.data.code === 0) {
+        billData.value = res.data.data
+      } else {
+        ElMessage.error('获取账单失败')
+        router.push('/cart')
+      }
     }
   } catch (error) {
     console.error('获取账单失败:', error)
     ElMessage.error('获取账单失败')
-    router.push('/cart')
+    router.push('/')
   } finally {
     loading.value = false
   }
@@ -89,8 +119,62 @@ const submitOrder = () => {
     return
   }
 
-  ElMessageBox.alert('订单创建功能开发中...', '提示')
-  // TODO: 这里将来需要调用创建订单的 API
+  if (!billData.value || billData.value.items.length === 0) {
+    ElMessage.warning('没有可结算的商品')
+    return
+  }
+
+  // 构建订单参数
+  const orderParams = {
+    addressId: selectedAddressId.value,
+    paymentMethod: paymentMethod.value,
+    invoiceType: invoiceType.value === 'none' ? null : invoiceType.value,
+    orderSource: isDirectBuy.value ? 'direct_buy' : 'cart',
+    items: isDirectBuy.value
+      ? [{
+          commodityId: directBuyCommodityId.value,
+          quantity: directBuyQuantity.value
+        }]
+      : billData.value.items.map(item => ({
+          cartItemId: item.cart_item_id,
+          commodityId: item.commodity_id,
+          quantity: item.commodity_num
+        }))
+  }
+
+  console.log('提交订单参数:', orderParams)
+
+  // 这里是模拟订单提交，实际项目中应该调用创建订单的API
+  ElMessageBox.confirm('确认提交订单吗？', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'info'
+  }).then(() => {
+    // 模拟成功下单
+    ElMessage.success('订单提交成功！')
+
+    // 根据购买方式处理购物车
+    if (!isDirectBuy.value) {
+      // 如果是从购物车购买，成功下单后需要从购物车中删除这些商品
+      // 实际项目中，这部分逻辑可能在后端处理，或者在订单创建成功的回调中处理
+      // 清空选中状态，避免返回购物车时仍显示已提交的商品
+      cartStore.clearSelectedItems()
+
+      // 提示用户
+      ElMessage.info('已从购物车中移除所购买的商品')
+
+      // 跳转到订单详情或订单列表页面
+      // 这里暂时简单返回首页
+      router.push('/')
+    } else {
+      // 如果是直接购买，直接跳转到订单详情或订单列表页面
+      // 这里暂时简单返回首页
+      router.push('/')
+    }
+  }).catch(() => {
+    // 用户取消提交
+    ElMessage.info('已取消提交订单')
+  })
 }
 
 // 格式化图片 URL
@@ -105,7 +189,27 @@ const selectedAddress = computed(() => {
   return addressList.value.find(addr => addr.id === selectedAddressId.value)
 })
 
+// 返回上一页
+const goBack = () => {
+  if (isDirectBuy.value && directBuyCommodityId.value) {
+    // 如果是直接购买，返回商品详情页
+    router.push(`/commodity/${directBuyCommodityId.value}`)
+  } else {
+    // 否则返回购物车页面，选中状态已经在store中保存
+    router.push('/cart')
+  }
+}
+
+// 在组件挂载时保存选中的购物车项目，以便在返回购物车时恢复
 onMounted(async () => {
+  // 如果不是直接购买模式，而是从购物车进入，则保存选中的购物车项目
+  if (!isDirectBuy.value) {
+    const itemIds = getItemIds()
+    if (itemIds.length > 0) {
+      cartStore.saveSelectedItems(itemIds)
+    }
+  }
+
   await fetchAddressList()
   await fetchBillData()
 })
@@ -117,6 +221,9 @@ onMounted(async () => {
       <div class="logo">
         <!-- <img src="http://static.toastmemo.com/img/go-mall/logo/go-mall-logo.png" alt="Go Mall"> -->
         <span>结算页</span>
+        <el-button type="text" class="back-link" @click="goBack">
+          <el-icon><ArrowLeft /></el-icon> 返回
+        </el-button>
       </div>
       <div class="checkout-steps">
         <div class="step active">1.填写订单信息</div>
@@ -323,6 +430,22 @@ onMounted(async () => {
 .logo span {
   font-size: 18px;
   color: #666;
+}
+
+.back-link {
+  margin-left: 20px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.back-link:hover {
+  color: #e4393c;
+}
+
+.back-link .el-icon {
+  margin-right: 5px;
 }
 
 .checkout-steps {

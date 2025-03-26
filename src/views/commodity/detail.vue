@@ -72,11 +72,23 @@
           </div>
 
           <div class="actions">
-            <el-button type="primary" size="large" @click="addToCart" :disabled="commodity.stock_num === 0">
-              <el-icon><ShoppingCart /></el-icon>
+            <el-button
+              type="primary"
+              size="large"
+              @click="addToCart"
+              :loading="addingToCart"
+              :disabled="commodity.stock_num === 0 || addingToCart"
+            >
+              <el-icon v-if="!addingToCart"><ShoppingCart /></el-icon>
               {{ commodity.stock_num === 0 ? '已售罄' : '加入购物车' }}
             </el-button>
-            <el-button type="danger" size="large" @click="buyNow" :disabled="commodity.stock_num === 0">
+            <el-button
+              type="danger"
+              size="large"
+              @click="buyNow"
+              :loading="buying"
+              :disabled="commodity.stock_num === 0 || buying"
+            >
               {{ commodity.stock_num === 0 ? '已售罄' : '立即购买' }}
             </el-button>
           </div>
@@ -113,6 +125,8 @@ const showMagnifier = ref(false);
 const magnifierPos = ref({ x: 0, y: 0 });
 const magnifierSize = 150; // 放大镜大小
 const zoomLevel = 2; // 放大倍数
+const addingToCart = ref(false); // 加入购物车加载状态
+const buying = ref(false); // 立即购买加载状态
 
 const formatImageUrl = (url: string) => {
   if (!url) return '';
@@ -150,16 +164,19 @@ const addToCart = async () => {
   }
 
   try {
+    addingToCart.value = true;
     await cartStore.addItemToCart({
       commodity_id: commodity.value?.id || 0,
       commodity_num: quantity.value
     });
   } catch (error) {
     console.error('加入购物车失败:', error);
+  } finally {
+    addingToCart.value = false;
   }
 };
 
-const buyNow = () => {
+const buyNow = async () => {
   if (!getAccessToken()) {
     router.push({
       name: 'Login',
@@ -167,7 +184,40 @@ const buyNow = () => {
     });
     return;
   }
-  ElMessage.info('立即购买功能开发中...');
+
+  if (quantity.value > 5) {
+    ElMessage.warning('单个商品最多只能购买5个');
+    return;
+  }
+
+  if (!commodity.value) {
+    ElMessage.error('商品信息不存在');
+    return;
+  }
+
+  try {
+    buying.value = true;
+    // 检查商品库存是否充足
+    if (commodity.value.stock_num < quantity.value) {
+      ElMessage.warning(`商品库存不足，当前库存${commodity.value.stock_num}件`);
+      return;
+    }
+
+    // 直接跳转到结算页面，并传递商品信息
+    router.push({
+      path: '/checkout',
+      query: {
+        directBuy: 'true',
+        commodityId: commodity.value.id.toString(),
+        quantity: quantity.value.toString()
+      }
+    });
+  } catch (error) {
+    console.error('立即购买失败:', error);
+    ElMessage.error('操作失败，请稍后重试');
+  } finally {
+    buying.value = false;
+  }
 };
 
 const goBack = () => {

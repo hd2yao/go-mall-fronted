@@ -45,6 +45,13 @@ export interface CartBillResponse {
   }
 }
 
+// 直接购买请求参数
+export interface DirectBuyParams {
+  directBuy: boolean
+  commodityId: number
+  quantity: number
+}
+
 // 获取购物车列表
 export function getCartList() {
   return request<ApiResponse<CartItem[]>>({
@@ -86,11 +93,23 @@ export function deleteCartItem(itemId: number) {
 }
 
 // 获取购物车结算账单
-export function getCartBill(itemIds: number[]) {
+export function getCartBill(
+  itemIds: number[],
+  directBuyParams?: DirectBuyParams
+) {
   const searchParams = new URLSearchParams()
-  itemIds.forEach(id => {
-    searchParams.append('item_id', id.toString())
-  })
+
+  if (directBuyParams && directBuyParams.directBuy) {
+    // 直接购买模式
+    searchParams.append('direct_buy', 'true')
+    searchParams.append('commodity_id', directBuyParams.commodityId.toString())
+    searchParams.append('quantity', directBuyParams.quantity.toString())
+  } else {
+    // 购物车模式
+    itemIds.forEach(id => {
+      searchParams.append('item_id', id.toString())
+    })
+  }
 
   return request<ApiResponse<CartBillResponse>>({
     url: `/cart/item/check-bill?${searchParams.toString()}`,
