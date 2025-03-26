@@ -9,9 +9,9 @@
         label-width="0"
         @keyup.enter="handleLogin"
       >
-        <el-form-item prop="username">
+        <el-form-item prop="login_name">
           <el-input
-            v-model="loginForm.username"
+            v-model="loginForm.login_name"
             placeholder="邮箱/手机号"
           >
             <template #prefix>
@@ -69,12 +69,12 @@ const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
 const loginForm = reactive({
-  username: '',
+  login_name: '',
   password: ''
 })
 
 const loginRules: FormRules = {
-  username: [
+  login_name: [
     { required: true, message: '请输入用户名/邮箱/手机号', trigger: 'blur' }
   ],
   password: [
@@ -90,7 +90,7 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loading.value = true
 
-    const success = await userStore.handleLogin(loginForm.username, loginForm.password)
+    const success = await userStore.handleLogin(loginForm.login_name, loginForm.password)
     if (success) {
       ElMessage.success('登录成功')
       // 跳转到之前的页面或首页

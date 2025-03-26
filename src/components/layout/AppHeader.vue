@@ -14,6 +14,7 @@
         </div>
         <div class="user-actions">
           <template v-if="isLoggedIn">
+            <el-button size="small" @click="testGetUserInfo" type="info">刷新用户信息</el-button>
             <el-dropdown>
               <span class="user-info">
                 {{ userInfo?.nickname }}
@@ -54,20 +55,37 @@ import { ArrowDown, ShoppingCart } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import SearchBar from '@/components/layout/SearchBar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const isLoggedIn = computed(() => userStore.isLoggedIn)
+const isLoggedIn = computed(() => {
+  console.log('检查登录状态:', userStore.isLoggedIn, '用户信息:', userStore.userInfo)
+  return userStore.isLoggedIn
+})
 const userInfo = computed(() => userStore.userInfo)
+
+onMounted(() => {
+  console.log('AppHeader mounted, 登录状态:', userStore.isLoggedIn, '用户信息:', userStore.userInfo)
+})
 
 const handleLogout = async () => {
   const success = await userStore.handleLogout()
   if (success) {
     ElMessage.success('已退出登录')
     router.push('/')
+  }
+}
+
+const testGetUserInfo = async () => {
+  try {
+    await userStore.getUserInfoAction()
+    ElMessage.success('用户信息已刷新')
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    ElMessage.error('获取用户信息失败')
   }
 }
 </script>

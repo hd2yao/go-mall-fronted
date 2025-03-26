@@ -91,6 +91,7 @@ export const register = (data: RegisterParams) => {
 
 // 用户登录
 export const login = (data: LoginParams) => {
+  console.log('调用登录API, 参数:', data)
   return request<ApiResponse<LoginResponse>>({
     url: '/user/login',
     method: 'post',
@@ -142,6 +143,7 @@ export const resetPassword = (data: ResetPasswordParams) => {
 
 // 获取用户信息
 export const getUserInfo = () => {
+  console.log('调用获取用户信息API')
   return request<ApiResponse<UserInfo>>({
     url: '/user/info',
     method: 'get',

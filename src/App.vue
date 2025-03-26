@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { isTokenExpired, isRefreshTokenExpired, clearToken } from '@/utils/token'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 
 const userStore = useUserStore()
 
 onMounted(async () => {
-  await userStore.initUserState()
+  // 检查token和refresh_token
+  // 如果access_token过期且refresh_token也过期，清除用户状态
+  if (isTokenExpired() && isRefreshTokenExpired()) {
+    userStore.clearUserInfo()
+    clearToken()
+  } else {
+    // 如果至少有一个token有效，尝试初始化用户状态
+    await userStore.initUserState()
+  }
 })
 </script>
 
