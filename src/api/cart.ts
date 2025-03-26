@@ -25,6 +25,26 @@ item_id: number
 commodity_num: number
 }
 
+// 购物车结算账单响应类型
+export interface CartBillResponse {
+  items: CartItem[]
+  bill_detail: {
+    coupon: {
+      coupon_id: number
+      coupon_name: string
+      discount_money: number
+    }
+    discount: {
+      discount_id: number
+      discount_name: string
+      discount_money: number
+    }
+    vip_discount_money: number
+    original_total_price: number
+    total_price: number
+  }
+}
+
 // 获取购物车列表
 export function getCartList() {
   return request<ApiResponse<CartItem[]>>({
@@ -62,5 +82,18 @@ export function deleteCartItem(itemId: number) {
   return request<ApiResponse>({
     url: `/cart/item/${itemId}`,
     method: 'delete'
+  })
+}
+
+// 获取购物车结算账单
+export function getCartBill(itemIds: number[]) {
+  const searchParams = new URLSearchParams()
+  itemIds.forEach(id => {
+    searchParams.append('item_id', id.toString())
+  })
+
+  return request<ApiResponse<CartBillResponse>>({
+    url: `/cart/item/check-bill?${searchParams.toString()}`,
+    method: 'get'
   })
 }

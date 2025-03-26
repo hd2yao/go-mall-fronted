@@ -85,6 +85,15 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true
     }
   },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('@/views/checkout/Checkout.vue'),
+    meta: {
+      title: '订单结算',
+      requiresAuth: true
+    }
+  },
   // {
   //   path: '/order/create',
   //   component: () => import('@/views/order/Create.vue'),

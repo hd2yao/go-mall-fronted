@@ -81,6 +81,25 @@ const formatImageUrl = (url: string) => {
   if (!url) return '';
   return url.replace('https://', 'http://');
 };
+
+// 处理结算
+const handleCheckout = async () => {
+  if (selectedItems.value.size === 0) {
+    ElMessageBox.alert('请选择要结算的商品', '提示')
+    return
+  }
+
+  // 获取选中的商品ID
+  const itemIds = Array.from(selectedItems.value)
+
+  // 跳转到结算页面
+  router.push({
+    path: '/checkout',
+    query: {
+      itemIds: itemIds.join(',')
+    }
+  })
+}
 </script>
 
 <template>
@@ -170,6 +189,7 @@ const formatImageUrl = (url: string) => {
             size="large"
             :disabled="selectedCount === 0"
             class="checkout-button"
+            @click="handleCheckout"
           >
             去结算
           </el-button>

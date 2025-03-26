@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getCartList, addToCart, updateCartItem, deleteCartItem } from '@/api/cart'
+import { getCartList, addToCart, updateCartItem, deleteCartItem, getCartBill, CartBillResponse } from '@/api/cart'
 import type { CartItem, AddToCartParams, UpdateCartItemParams } from '@/api/cart'
 import { ElMessage } from 'element-plus'
 
 export const useCartStore = defineStore('cart', () => {
   // 购物车列表
   const cartItems = ref<CartItem[]>([])
+  // 结算账单
+  const bill = ref<CartBillResponse | null>(null)
 
   // 获取购物车列表
   const fetchCartList = async () => {
@@ -69,13 +71,30 @@ export const useCartStore = defineStore('cart', () => {
     return cartItems.value.reduce((sum, item) => sum + item.commodity_selling_price * item.commodity_num, 0)
   }
 
+  // 获取结算账单
+  const fetchCartBill = async (itemIds: number[]) => {
+    try {
+      const res = await getCartBill(itemIds)
+      if (res.data.code === 0) {
+        bill.value = res.data.data
+        return res.data.data
+      }
+      return null
+    } catch (error) {
+      console.error('获取结算账单失败:', error)
+      return null
+    }
+  }
+
   return {
     cartItems,
+    bill,
     fetchCartList,
     addItemToCart,
     updateItemInCart,
     removeItemFromCart,
     totalItems,
-    totalAmount
+    totalAmount,
+    fetchCartBill
   }
 })
